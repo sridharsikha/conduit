@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Self-Serve Private Networking for Cloud SaaS — NaaS Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f9fb;--surface:#fff;--surface2:#f1f3f5;--border:#e2e8f0;--dark:#0f172a;--muted:#64748b;--accent:#1e40af;--accent-light:#eff6ff;--green:#16a34a;--green-light:#f0fdf4;--amber:#d97706;--amber-light:#fffbeb;--red:#dc2626;--red-light:#fef2f2;--purple:#7c3aed;--purple-light:#f5f3ff;--teal:#0f766e;--teal-light:#f0fdfa;--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;--aws:#FF9900;--azure:#0078D4;--gcp:#4285F4}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--dark)}
+.header{background:var(--dark);padding:20px 32px;display:flex;align-items:center;justify-content:space-between}
+.header h1{color:#fff;font-size:18px;font-weight:600;letter-spacing:-.3px}
+.header .sub{color:#94a3b8;font-size:13px;margin-top:2px}
+.header .badge{background:var(--accent);color:#fff;font-size:10px;padding:3px 10px;border-radius:10px;font-weight:600;letter-spacing:.5px}
+.nav{display:flex;gap:1px;background:var(--border);border-bottom:1px solid var(--border);overflow-x:auto}
+.nav-item{padding:12px 18px;font-size:13px;font-weight:500;cursor:pointer;background:var(--surface2);color:var(--muted);white-space:nowrap;transition:all .15s;border-bottom:2px solid transparent}
+.nav-item:hover{background:var(--surface);color:var(--dark)}
+.nav-item.active{background:var(--surface);color:var(--accent);border-bottom-color:var(--accent)}
+.content{max-width:1100px;margin:0 auto;padding:24px}
+.sl{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;margin:24px 0 10px}
+.sl:first-child{margin-top:0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px}
+.card h3{font-size:14px;font-weight:600;margin-bottom:8px}
+.mono{font-family:var(--mono)}
+.code{font-family:var(--mono);font-size:11px;background:var(--dark);color:#e2e8f0;padding:14px 16px;border-radius:8px;line-height:1.7;overflow-x:auto;white-space:pre;margin:8px 0}
+.ck{color:#93c5fd}.cs{color:#86efac}.cn{color:#fcd34d}.cc{color:#64748b}.ce{color:#fca5a5}
+.badge-sm{display:inline-block;font-size:9px;font-weight:600;padding:2px 8px;border-radius:10px}
+.b-aws{background:var(--aws);color:#fff}.b-azure{background:var(--azure);color:#fff}.b-gcp{background:var(--gcp);color:#fff}
+.b-ok{background:var(--green-light);color:var(--green)}.b-warn{background:var(--amber-light);color:var(--amber)}
+.b-err{background:var(--red-light);color:var(--red)}.b-info{background:var(--accent-light);color:var(--accent)}
+.b-purple{background:var(--purple-light);color:var(--purple)}.b-teal{background:var(--teal-light);color:var(--teal)}
+.tbl{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+.tbl th{text-align:left;padding:8px 10px;font-weight:600;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.tbl td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.tbl tr:hover td{background:var(--surface2)}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px}
+.metric .label{font-size:11px;color:var(--muted)}
+.metric .val{font-size:22px;font-weight:600;margin-top:2px}
+.metric .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.flow-step{display:grid;grid-template-columns:44px 1fr 240px;gap:0;margin-bottom:0}
+.flow-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;margin-top:2px}
+.flow-line-area{display:flex;flex-direction:column;align-items:center}
+.flow-connector{width:2px;flex:1;background:var(--border);margin-top:4px}
+.flow-body{padding-bottom:20px}
+.flow-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.flow-desc{font-size:12px;color:var(--muted);line-height:1.6}
+.flow-side{font-size:11px;color:var(--muted);line-height:1.5;padding:4px 12px;border-left:2px solid var(--border);margin-top:2px}
+.flow-side strong{color:var(--dark);font-weight:500}
+.resolve-chain{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0}
+.resolve-node{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:500;border:1px solid var(--border);background:var(--surface)}
+.resolve-arrow{color:var(--muted);font-size:13px}
+.alert{border-radius:8px;padding:12px 16px;font-size:12px;line-height:1.6;margin:8px 0}
+.alert-ok{background:var(--green-light);border:1px solid #bbf7d0;color:#166534}
+.alert-err{background:var(--red-light);border:1px solid #fecaca;color:#991b1b}
+.alert-warn{background:var(--amber-light);border:1px solid #fde68a;color:#92400e}
+.alert-info{background:var(--accent-light);border:1px solid #bfdbfe;color:#1e3a8a}
+.demo-row{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0}
+.demo-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500}
+.demo-field select,.demo-field input{font-family:var(--font);font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
+.btn{font-family:var(--font);font-size:12px;font-weight:600;padding:8px 18px;border-radius:6px;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#1e3a8a}
+.btn-outline{background:var(--surface);color:var(--dark);border:1px solid var(--border)}.btn-outline:hover{background:var(--surface2)}
+.arch-container{position:relative;margin:16px 0}
+.cb-row{display:flex;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.cb-row:last-child{border:none}
+.cb-bar-wrap{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;margin:0 12px}
+.cb-bar{height:100%;border-radius:4px}
+.approval-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;background:var(--surface)}
+@media(max-width:768px){.flow-step{grid-template-columns:44px 1fr}.flow-side{display:none}.metrics{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+<div>
+<h1>Conduit — self-serve private networking portal</h1>
+<div class="sub">Multi-SaaS, multi-cloud, multi-tenant NaaS orchestration</div>
+</div>
+<div class="badge">CONCEPT DEMO</div>
+</div>
+<div class="nav" id="nav"></div>
+<div class="content" id="content"></div>
+
+<script>
+const TABS=['Architecture','Day 0 setup','Service registry','Developer portal','API playground','Approval flow','Topology','Billing','Lifecycle','Roadmap','Day 0 checklist'];
+let tab=0;
+
+const SAAS={
+  confluent:{name:'Confluent Cloud',type:'Kafka streaming',color:'#172554',regions:[
+    {csp:'aws',region:'us-east-1',cluster:'pkc-prod01',nodes:3,status:'healthy'},
+    {csp:'gcp',region:'europe-west1',cluster:'pkc-gcpeu01',nodes:3,status:'healthy'},
+    {csp:'azure',region:'eastus',cluster:'pkc-az01',nodes:3,status:'healthy'},
+    {csp:'azure',region:'westeurope',cluster:'pkc-azeu01',nodes:3,status:'healthy'}]},
+  snowflake:{name:'Snowflake',type:'Data warehouse',color:'#29B5E8',regions:[
+    {csp:'aws',region:'us-east-1',cluster:'acme.us-east-1',nodes:0,status:'healthy'},
+    {csp:'azure',region:'eastus',cluster:'acme.east-us-2.azure',nodes:0,status:'healthy'}]},
+  databricks:{name:'Databricks',type:'Lakehouse / ML',color:'#FF3621',regions:[
+    {csp:'aws',region:'us-east-1',cluster:'dbc-prod-use1',nodes:0,status:'healthy'},
+    {csp:'azure',region:'eastus',cluster:'adb-prod-eus',nodes:0,status:'healthy'}]},
+  mongodb:{name:'MongoDB Atlas',type:'Document database',color:'#00684A',regions:[
+    {csp:'aws',region:'us-east-1',cluster:'atlas-prod-use1',nodes:3,status:'healthy'},
+    {csp:'gcp',region:'europe-west1',cluster:'atlas-prod-ew1',nodes:3,status:'healthy'}]},
+  redis:{name:'Redis Cloud',type:'Cache / queue',color:'#DC382D',regions:[
+    {csp:'aws',region:'us-east-1',cluster:'redis-prod-use1',nodes:0,status:'healthy'}]},
+  elastic:{name:'Elastic Cloud',type:'Search / analytics',color:'#FEC514',regions:[
+    {csp:'aws',region:'us-east-1',cluster:'elastic-prod-use1',nodes:0,status:'healthy'}]},
+  datadog:{name:'Datadog',type:'Observability',color:'#632CA6',regions:[
+    {csp:'aws',region:'us-east-1',cluster:'dd-intake-use1',nodes:0,status:'healthy'}]},
+};
+
+const TEAMS=[
+  {name:'Commerce',cc:'CC-3100',sso:'eng-commerce',approvers:['james.liu@acme.com'],
+   accounts:[
+    {csp:'aws',acct:'111222333444',region:'us-east-1',env:'prod',vpc:'vpc-0comm-prod',cidr:'10.0.0.0/16',subnets:['subnet-01a (us-east-1a)','subnet-01b (us-east-1b)'],iam:'arn:aws:iam::111222333444:role/NaaSProvisioner',sg:'sg-kafka-comm-9092',verified:true},
+    {csp:'aws',acct:'111222333444',region:'us-east-1',env:'dev',vpc:'vpc-0comm-dev',cidr:'10.10.0.0/16',subnets:['subnet-dev-01a'],iam:'arn:aws:iam::111222333444:role/NaaSProvisioner',sg:'sg-kafka-dev',verified:true},
+    {csp:'gcp',acct:'acme-commerce-eu',region:'europe-west1',env:'prod',vpc:'commerce-vpc-eu',cidr:'10.9.0.0/16',subnets:['10.9.1.0/24 (ew1-b)'],iam:'roles/NaaSProvisioner',sg:'fw-kafka-9092',verified:true},
+   ]},
+  {name:'Data',cc:'CC-4200',sso:'eng-data',approvers:['james.liu@acme.com','sarah.chen@acme.com'],
+   accounts:[
+    {csp:'aws',acct:'555666777888',region:'us-east-1',env:'prod',vpc:'vpc-0data-prod',cidr:'10.3.0.0/16',subnets:['subnet-data-01a','subnet-data-01b','subnet-data-01c'],iam:'arn:aws:iam::555666777888:role/NaaSProvisioner',sg:'sg-kafka-data',verified:true},
+    {csp:'azure',acct:'sub-abcd-1234',region:'westeurope',env:'prod',vpc:'vnet-data-weu',cidr:'10.5.0.0/16',subnets:['10.5.1.0/24','10.5.2.0/24'],iam:'Contributor (rg-data)',sg:'nsg-kafka-data',verified:true},
+    {csp:'aws',acct:'555666777888',region:'us-east-1',env:'dev',vpc:'vpc-0data-dev',cidr:'10.11.0.0/16',subnets:['subnet-data-dev'],iam:'arn:aws:iam::555666777888:role/NaaSProvisioner',sg:'sg-kafka-data-dev',verified:true},
+   ]},
+  {name:'ML Platform',cc:'CC-4500',sso:'eng-ml',approvers:['david.kim@acme.com'],
+   accounts:[
+    {csp:'azure',acct:'sub-efgh-5678',region:'eastus',env:'prod',vpc:'vnet-ml-prod',cidr:'10.4.0.0/16',subnets:['10.4.1.0/24','10.4.2.0/24'],iam:'Contributor (rg-ml)',sg:'nsg-kafka-ml',verified:true},
+    {csp:'azure',acct:'sub-efgh-5678',region:'eastus',env:'perf',vpc:'vnet-ml-perf',cidr:'10.4.128.0/17',subnets:['10.4.129.0/24'],iam:'Contributor (rg-ml-perf)',sg:'nsg-kafka-ml-perf',verified:true},
+   ]},
+  {name:'Platform',cc:'CC-4000',sso:'eng-platform',approvers:['david.kim@acme.com'],
+   accounts:[
+    {csp:'gcp',acct:'acme-platform',region:'us-central1',env:'qa',vpc:'platform-vpc',cidr:'10.8.0.0/16',subnets:['10.8.1.0/24'],iam:'roles/NaaSProvisioner',sg:'fw-kafka-platform',verified:true},
+    {csp:'gcp',acct:'acme-platform',region:'us-central1',env:'dev',vpc:'platform-vpc-dev',cidr:'10.13.0.0/16',subnets:['10.13.1.0/24'],iam:'roles/NaaSProvisioner',sg:'fw-kafka-dev',verified:true},
+   ]},
+];
+
+const SERVICES={
+  'order-svc':{team:'Commerce',owner:'maya.chen',deps:[
+    {env:'prod',cluster:'eks-prod-use1',csp:'aws',region:'us-east-1',ns:'commerce',rep:3},
+    {env:'prod',cluster:'gke-prod-ew1',csp:'gcp',region:'europe-west1',ns:'commerce',rep:2},
+    {env:'dev',cluster:'eks-dev-use1',csp:'aws',region:'us-east-1',ns:'commerce-dev',rep:1}]},
+  'payment-svc':{team:'Commerce',owner:'alex.park',deps:[
+    {env:'prod',cluster:'eks-prod-use1',csp:'aws',region:'us-east-1',ns:'commerce',rep:3},
+    {env:'qa',cluster:'gke-qa-usc1',csp:'gcp',region:'us-central1',ns:'commerce-qa',rep:2}]},
+  'ml-pipeline':{team:'ML Platform',owner:'priya.sharma',deps:[
+    {env:'prod',cluster:'aks-prod-eus',csp:'azure',region:'eastus',ns:'ml',rep:6},
+    {env:'perf',cluster:'aks-perf-eus',csp:'azure',region:'eastus',ns:'ml-perf',rep:4}]},
+  'data-export':{team:'Data',owner:'sam.torres',deps:[
+    {env:'prod',cluster:'eks-prod-use1',csp:'aws',region:'us-east-1',ns:'data',rep:2},
+    {env:'prod',cluster:'aks-prod-weu',csp:'azure',region:'westeurope',ns:'data',rep:2}]},
+  'notification-svc':{team:'Platform',owner:'riley.wang',deps:[
+    {env:'qa',cluster:'gke-qa-usc1',csp:'gcp',region:'us-central1',ns:'platform-qa',rep:2},
+    {env:'dev',cluster:'gke-dev-usc1',csp:'gcp',region:'us-central1',ns:'platform-dev',rep:1}]},
+  'analytics-worker':{team:'Data',owner:'sam.torres',deps:[
+    {env:'prod',cluster:'eks-prod-use1',csp:'aws',region:'us-east-1',ns:'data',rep:3},
+    {env:'dev',cluster:'eks-dev-use1',csp:'aws',region:'us-east-1',ns:'data-dev',rep:1}]},
+  'fraud-detector':{team:'Data',owner:'jordan.lee',deps:[
+    {env:'prod',cluster:'eks-prod-use1',csp:'aws',region:'us-east-1',ns:'risk',rep:3}]},
+  'recommendation-engine':{team:'ML Platform',owner:'priya.sharma',deps:[
+    {env:'prod',cluster:'aks-prod-eus',csp:'azure',region:'eastus',ns:'ml',rep:4}]},
+};
+
+const CONNECTIONS=[
+  {id:'CONN-001',ritm:'RITM0042401',saas:'confluent',svc:'order-svc',env:'prod',csp:'aws',region:'us-east-1',team:'Commerce',cc:'CC-3100',requester:'maya.chen',approver:'james.liu',status:'active',approval:'snow',bw:500,created:'2026-03-15',dur:'22d',egress:2840,ingress:4120,cost:142.80,ep:'vpce-0abc1234',ip:'10.0.1.47'},
+  {id:'CONN-002',ritm:'RITM0042402',saas:'confluent',svc:'order-svc',env:'prod',csp:'gcp',region:'europe-west1',team:'Commerce',cc:'CC-3100',requester:'maya.chen',approver:'james.liu',status:'active',approval:'snow',bw:500,created:'2026-03-15',dur:'22d',egress:1250,ingress:1890,cost:62.80,ep:'psc-comm-ew1',ip:'10.9.0.5'},
+  {id:'CONN-003',ritm:'RITM0042403',saas:'confluent',svc:'payment-svc',env:'prod',csp:'aws',region:'us-east-1',team:'Commerce',cc:'CC-3100',requester:'alex.park',approver:'james.liu',status:'active',approval:'snow',bw:500,created:'2026-03-16',dur:'21d',egress:890,ingress:1340,cost:44.60,ep:'vpce-0def5678',ip:'10.0.1.48'},
+  {id:'CONN-004',ritm:'—',saas:'confluent',svc:'analytics-worker',env:'dev',csp:'aws',region:'us-east-1',team:'Data',cc:'CC-4200',requester:'sam.torres',approver:'auto',status:'active',approval:'auto',bw:100,created:'2026-03-20',dur:'17d',egress:120,ingress:450,cost:8.55,ep:'vpce-0dev1234',ip:'10.11.1.10'},
+  {id:'CONN-005',ritm:'RITM0042405',saas:'databricks',svc:'ml-pipeline',env:'prod',csp:'azure',region:'eastus',team:'ML Platform',cc:'CC-4500',requester:'priya.sharma',approver:'david.kim',status:'active',approval:'snow',bw:1000,created:'2026-03-22',dur:'15d',egress:6780,ingress:12400,cost:383.60,ep:'pe-ml-eus-01',ip:'10.4.1.12'},
+  {id:'CONN-006',ritm:'RITM0042406',saas:'snowflake',svc:'data-export',env:'prod',csp:'aws',region:'us-east-1',team:'Data',cc:'CC-4200',requester:'sam.torres',approver:'james.liu',status:'active',approval:'snow',bw:500,created:'2026-03-25',dur:'12d',egress:4560,ingress:320,cost:231.60,ep:'vpce-0data5678',ip:'10.3.1.47'},
+  {id:'CONN-007',ritm:'RITM0042407',saas:'snowflake',svc:'data-export',env:'prod',csp:'azure',region:'westeurope',team:'Data',cc:'CC-4200',requester:'sam.torres',approver:'james.liu',status:'active',approval:'snow',bw:500,created:'2026-03-25',dur:'12d',egress:3210,ingress:210,cost:162.30,ep:'pe-data-weu-01',ip:'10.5.2.8'},
+  {id:'CONN-008',ritm:'—',saas:'mongodb',svc:'notification-svc',env:'qa',csp:'gcp',region:'us-central1',team:'Platform',cc:'CC-4000',requester:'riley.wang',approver:'auto',status:'active',approval:'auto',bw:200,created:'2026-04-01',dur:'5d',egress:34,ingress:78,cost:1.68,ep:'psc-plat-usc1',ip:'10.8.0.14'},
+  {id:'CONN-009',ritm:'RITM0042409',saas:'confluent',svc:'fraud-detector',env:'prod',csp:'aws',region:'us-east-1',team:'Data',cc:'CC-4200',requester:'jordan.lee',approver:'—',status:'pending',approval:'snow',bw:500,created:'2026-04-06',dur:'—',egress:0,ingress:0,cost:0,ep:'—',ip:'—'},
+  {id:'CONN-010',ritm:'RITM0042410',saas:'databricks',svc:'recommendation-engine',env:'prod',csp:'azure',region:'eastus',team:'ML Platform',cc:'CC-4500',requester:'priya.sharma',approver:'—',status:'pending',approval:'snow',bw:1000,created:'2026-04-06',dur:'—',egress:0,ingress:0,cost:0,ep:'—',ip:'—'},
+  {id:'CONN-011',ritm:'RITM0042411',saas:'mongodb',svc:'order-svc',env:'prod',csp:'aws',region:'us-east-1',team:'Commerce',cc:'CC-3100',requester:'maya.chen',approver:'james.liu',status:'active',approval:'snow',bw:200,created:'2026-03-18',dur:'19d',egress:560,ingress:1890,cost:36.75,ep:'vpce-0mongo01',ip:'10.0.1.55'},
+  {id:'CONN-012',ritm:'—',saas:'snowflake',svc:'analytics-worker',env:'dev',csp:'aws',region:'us-east-1',team:'Data',cc:'CC-4200',requester:'sam.torres',approver:'auto',status:'active',approval:'auto',bw:100,created:'2026-03-28',dur:'9d',egress:45,ingress:210,cost:3.83,ep:'vpce-0snow-dev',ip:'10.11.1.20'},
+  {id:'CONN-100',ritm:'—',saas:'confluent',svc:'conduit-platform',env:'prod',csp:'aws',region:'us-east-1',team:'Platform',cc:'CC-4000',requester:'conduit-admin',approver:'auto',status:'active',approval:'auto',bw:200,created:'2026-03-01',dur:'36d',egress:890,ingress:2340,cost:48.45,ep:'vpce-conduit-kafka',ip:'10.0.1.99'},
+  {id:'CONN-101',ritm:'—',saas:'redis',svc:'conduit-platform',env:'prod',csp:'aws',region:'us-east-1',team:'Platform',cc:'CC-4000',requester:'conduit-admin',approver:'auto',status:'active',approval:'auto',bw:100,created:'2026-03-01',dur:'36d',egress:120,ingress:340,cost:6.90,ep:'vpce-conduit-redis',ip:'10.0.1.100'},
+  {id:'CONN-102',ritm:'—',saas:'snowflake',svc:'conduit-platform',env:'prod',csp:'aws',region:'us-east-1',team:'Platform',cc:'CC-4000',requester:'conduit-admin',approver:'auto',status:'active',approval:'auto',bw:100,created:'2026-03-01',dur:'36d',egress:2100,ingress:45,cost:107.25,ep:'vpce-conduit-snow',ip:'10.0.1.101'},
+  {id:'CONN-103',ritm:'—',saas:'mongodb',svc:'conduit-platform',env:'prod',csp:'aws',region:'us-east-1',team:'Platform',cc:'CC-4000',requester:'conduit-admin',approver:'auto',status:'active',approval:'auto',bw:100,created:'2026-03-01',dur:'36d',egress:340,ingress:890,cost:18.45,ep:'vpce-conduit-mongo',ip:'10.0.1.102'},
+  {id:'CONN-104',ritm:'—',saas:'elastic',svc:'conduit-platform',env:'prod',csp:'aws',region:'us-east-1',team:'Platform',cc:'CC-4000',requester:'conduit-admin',approver:'auto',status:'active',approval:'auto',bw:100,created:'2026-03-01',dur:'36d',egress:67,ingress:1230,cost:19.46,ep:'vpce-conduit-elastic',ip:'10.0.1.103'},
+  {id:'CONN-105',ritm:'—',saas:'datadog',svc:'conduit-platform',env:'prod',csp:'aws',region:'us-east-1',team:'Platform',cc:'CC-4000',requester:'conduit-admin',approver:'auto',status:'active',approval:'auto',bw:100,created:'2026-03-01',dur:'36d',egress:450,ingress:12,cost:23.10,ep:'vpce-conduit-dd',ip:'10.0.1.104'},
+];
+
+let demoSvc='order-svc',demoEnv='prod',demoResult=null,topoSaas='all',topoFilter='all';
+
+function cspBadge(c){return `<span class="badge-sm b-${c}">${c.toUpperCase()}</span>`}
+function saasBadge(s){const p=SAAS[s];return p?`<span class="badge-sm" style="background:${p.color};color:#fff">${p.name}</span>`:`<span class="badge-sm">${s}</span>`}
+function findDay0(team,env,csp,region){const t=TEAMS.find(x=>x.name===team);if(!t)return null;return t.accounts.find(a=>a.env===env&&a.csp===csp&&a.region===region)||null}
+
+function render(){
+  document.getElementById('nav').innerHTML=TABS.map((t,i)=>`<div class="nav-item ${i===tab?'active':''}" onclick="tab=${i};render()">${t}</div>`).join('');
+  const fn=[renderArch,renderDay0,renderRegistry,renderPortal,renderPlayground,renderApproval,renderTopology,renderBilling,renderLifecycle,renderRoadmap,renderChecklist];
+  document.getElementById('content').innerHTML=fn[tab]();
+}
+
+function renderArch(){
+  return `
+<div class="sl">Architecture overview</div>
+<div class="card"><h3>Three-plane NaaS orchestration</h3>
+<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">
+The developer sends 3 fields: service, environment, bandwidth. The NaaS orchestrator resolves everything else through three independent planes — identity, location, and infrastructure — then provisions private endpoints across any combination of CSPs.
+</p>
+<div class="code"><span class="cc">// Developer's API call — entire interface</span>
+<span class="ck">POST</span> https://naas.internal.acme.com/api/v1/connections
+Authorization: Bearer &lt;SSO_TOKEN&gt;
+
+{
+  <span class="cs">"service"</span>: <span class="cs">"order-svc"</span>,
+  <span class="cs">"environment"</span>: <span class="cs">"prod"</span>,
+  <span class="cs">"bandwidth_mbps"</span>: <span class="cn">500</span>
+}
+
+<span class="cc">// No CSP. No region. No VPC. No IAM role. No subnet.</span></div>
+</div>
+
+<div class="sl">Resolution planes</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+<div class="card" style="border-left:3px solid var(--teal)"><h3>Identity plane</h3><p style="font-size:12px;color:var(--muted);line-height:1.6">SSO token (Okta/Azure AD) → extract groups → resolve team, cost center, approver routing, SNOW assignment group. <strong style="color:var(--dark)">Answers: who is asking, who pays, who approves.</strong></p></div>
+<div class="card" style="border-left:3px solid var(--accent)"><h3>Location plane</h3><p style="font-size:12px;color:var(--muted);line-height:1.6">Service registry (Backstage/ArgoCD) → query deployments for service + env → resolve CSP, region, cluster, namespace. <strong style="color:var(--dark)">Answers: which clouds, which regions.</strong></p></div>
+<div class="card" style="border-left:3px solid var(--amber)"><h3>Infrastructure plane</h3><p style="font-size:12px;color:var(--muted);line-height:1.6">Day 0 config registry → match team/env/csp/region → resolve VPC, subnets, IAM role, security group. <strong style="color:var(--dark)">Answers: how to provision.</strong></p></div>
+</div>
+
+<div class="sl">Conduit internal event bus — Kafka as a service (dogfooding)</div>
+<div class="card" style="border-left:3px solid var(--amber)">
+<h3>Conduit runs on Confluent Cloud Kafka</h3>
+<p style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:10px">At Equinix, we hosted Kafka for DCIM/scheduler. Here, Kafka is consumed as a managed service — and the PrivateLink endpoint to Confluent Cloud was provisioned through Conduit itself.</p>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+<div style="background:var(--surface2);padding:8px;border-radius:6px;font-size:11px"><strong>conn.requests</strong><br><span style="color:var(--muted)">API server → Resolver</span></div>
+<div style="background:var(--surface2);padding:8px;border-radius:6px;font-size:11px"><strong>approval.events</strong><br><span style="color:var(--muted)">SNOW webhook → Provisioner</span></div>
+<div style="background:var(--surface2);padding:8px;border-radius:6px;font-size:11px"><strong>provision.events</strong><br><span style="color:var(--muted)">Provisioner → Billing</span></div>
+<div style="background:var(--surface2);padding:8px;border-radius:6px;font-size:11px"><strong>billing.usage</strong><br><span style="color:var(--muted)">Metering → Flink aggregation</span></div>
+<div style="background:var(--surface2);padding:8px;border-radius:6px;font-size:11px"><strong>lifecycle.events</strong><br><span style="color:var(--muted)">DNS proxy → Lifecycle worker</span></div>
+<div style="background:var(--surface2);padding:8px;border-radius:6px;font-size:11px"><strong>audit.sealed</strong><br><span style="color:var(--muted)">All workers → Immutable log</span></div>
+</div>
+<p style="font-size:12px;color:var(--muted);line-height:1.6"><strong style="color:var(--dark)">Why Kafka:</strong> Async provisioning (CSP calls take 30-90s — don't block the API). Replay on failure. Audit trail = immutable topic with infinite retention. Billing = Flink stream processing on usage topic. Schema Registry enforces event contracts across all workers.</p>
+</div>
+
+<div class="sl">Conduit eats its own dogfood — 7 SaaS services, all provisioned through Conduit</div>
+<div class="card">
+<p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:12px">Every internal dependency is a private endpoint that Conduit provisioned through itself. One portal, one API, one approval flow, one bill — for Conduit's own infrastructure.</p>
+<table class="tbl">
+<tr><th>Conduit component</th><th>Needs</th><th>SaaS provider</th><th>Connection</th><th>Provisioned via</th></tr>
+<tr><td style="font-weight:500">Event bus</td><td style="font-size:11px">Async workflows, replay</td><td>${saasBadge('confluent')} Kafka</td><td style="font-size:10px" class="mono">vpce-conduit-kafka</td><td><span class="badge-sm b-ok">Conduit self-serve</span></td></tr>
+<tr><td style="font-weight:500">Config registry</td><td style="font-size:11px">Day 0 configs, state</td><td><span class="badge-sm" style="background:#336791;color:#fff">CockroachDB Cloud</span> PostgreSQL</td><td style="font-size:10px" class="mono">vpce-conduit-crdb</td><td><span class="badge-sm b-ok">Conduit self-serve</span></td></tr>
+<tr><td style="font-weight:500">Job queue + cache</td><td style="font-size:11px">Async provisioning, tokens</td><td><span class="badge-sm" style="background:#DC382D;color:#fff">Redis Cloud</span></td><td style="font-size:10px" class="mono">vpce-conduit-redis</td><td><span class="badge-sm b-ok">Conduit self-serve</span></td></tr>
+<tr><td style="font-weight:500">Billing analytics</td><td style="font-size:11px">Chargeback, cost reports</td><td>${saasBadge('snowflake')} Warehouse</td><td style="font-size:10px" class="mono">vpce-conduit-snow</td><td><span class="badge-sm b-ok">Conduit self-serve</span></td></tr>
+<tr><td style="font-weight:500">Audit storage</td><td style="font-size:11px">Sealed records, compliance</td><td>${saasBadge('mongodb')} Atlas</td><td style="font-size:10px" class="mono">vpce-conduit-mongo</td><td><span class="badge-sm b-ok">Conduit self-serve</span></td></tr>
+<tr><td style="font-weight:500">Observability</td><td style="font-size:11px">Metrics, traces, alerts</td><td><span class="badge-sm" style="background:#632CA6;color:#fff">Datadog</span></td><td style="font-size:10px" class="mono">vpce-conduit-dd</td><td><span class="badge-sm b-ok">Conduit self-serve</span></td></tr>
+<tr><td style="font-weight:500">Search</td><td style="font-size:11px">Audit trail full-text</td><td><span class="badge-sm" style="background:#FEC514;color:#000">Elastic Cloud</span></td><td style="font-size:10px" class="mono">vpce-conduit-elastic</td><td><span class="badge-sm b-ok">Conduit self-serve</span></td></tr>
+</table>
+<p style="font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px"><strong style="color:var(--dark)">The enterprise pitch:</strong> "You already use Confluent AND Snowflake AND MongoDB AND Redis. Today that's 4 separate networking setups, 4 manual provisioning workflows. Conduit gives you one portal, one API, one bill." Every SaaS vendor contributes their acceptor plugin because it brings them customers. Confluent's plugin makes Snowflake more accessible, which makes Conduit more valuable, which brings more customers to Confluent.</p>
+</div>
+
+<div class="sl">Registered SaaS providers</div>
+<table class="tbl">
+<tr><th>Provider</th><th>Type</th><th>CSP</th><th>Region</th><th>Cluster / Instance</th><th>Status</th></tr>
+${Object.entries(SAAS).flatMap(([k,s])=>s.regions.map(r=>`<tr><td>${saasBadge(k)}</td><td style="font-size:11px">${s.type}</td><td>${cspBadge(r.csp)}</td><td style="font-size:11px">${r.region}</td><td class="mono" style="font-size:10px">${r.cluster}</td><td><span class="badge-sm b-ok">Healthy</span></td></tr>`)).join('')}
+</table>
+
+<div class="sl">Acme Corp — multi-team, multi-cloud client</div>
+<table class="tbl">
+<tr><th>Team</th><th>SSO group</th><th>Cost center</th><th>Approvers</th><th>Cloud accounts</th><th>Environments</th></tr>
+${TEAMS.map(t=>`<tr>
+<td style="font-weight:600">${t.name}</td>
+<td><span class="badge-sm b-info">${t.sso}</span></td>
+<td class="mono">${t.cc}</td>
+<td style="font-size:11px">${t.approvers.join(', ')}</td>
+<td>${[...new Set(t.accounts.map(a=>a.csp))].map(c=>cspBadge(c)).join(' ')}</td>
+<td>${[...new Set(t.accounts.map(a=>a.env))].map(e=>`<span class="badge-sm ${e==='prod'?'b-err':e==='perf'?'b-warn':'b-ok'}">${e}</span>`).join(' ')}</td>
+</tr>`).join('')}
+</table>
+
+<div class="sl">Request flow through the system</div>
+${flowStep(1,var_accent(),'API gateway','Developer calls NaaS API with SSO bearer token','Kong/Envoy: TLS termination, rate limiting, JWT validation. Routes to NaaS controller.')}
+${flowStep(2,var_teal(),'SSO resolution','Validate JWT, extract SSO group','eng-commerce → team: Commerce, CC-3100, approver: james.liu@acme.com')}
+${flowStep(3,var_accent(),'Service registry lookup','Where does order-svc run in prod?','Backstage: eks-prod-use1 (AWS us-east-1) + gke-prod-ew1 (GCP europe-west1)')}
+${flowStep(4,var_amber(),'Day 0 config match','Resolve VPC/IAM/SG per location','Commerce/prod/aws/us-east-1 → vpc-0comm-prod, NaaSProvisioner, sg-kafka-comm-9092')}
+${flowStep(5,var_purple(),'Policy engine','Auto-approve or SNOW?','Prod → SNOW required. Creates RITM with CMDB CI reference.')}
+${flowStep(6,var_amber(),'SNOW approval','Manager reviews in ServiceNow','Approver sees: who, where, VPC, cost projection, CMDB CI. Approves → webhook.')}
+${flowStep(7,var_green(),'Token + CSP API','Mint approval token, provision endpoints','Assume IAM role → aws ec2 create-vpc-endpoint + gcloud forwarding-rules create')}
+${flowStep(8,var_green(),'Connection ready','Developer gets multi-region config','Bootstrap servers, private IPs, API keys. RITM auto-closed. Billing meter starts.',true)}
+
+<div class="sl">End-to-end sequence — all actors</div>
+<div class="card" style="padding:8px;overflow-x:auto">
+<svg width="100%" viewBox="0 0 680 920" style="display:block">
+<defs><marker id="sa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="30" y="10" width="80" height="36" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/><text x="70" y="32" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#085041">Developer</text>
+<rect x="145" y="10" width="75" height="36" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/><text x="182" y="32" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#444441">API GW</text>
+<rect x="255" y="10" width="80" height="36" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/><text x="295" y="32" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#3C3489">NaaS orch</text>
+<rect x="370" y="10" width="70" height="36" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/><text x="405" y="32" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#712B13">SNOW</text>
+<rect x="475" y="10" width="70" height="36" rx="6" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/><text x="510" y="32" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#633806">CSP API</text>
+<rect x="580" y="10" width="75" height="36" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/><text x="617" y="32" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#0C447C">Confluent</text>
+<line x1="70" y1="46" x2="70" y2="900" stroke="#CBD5E1" stroke-width="0.5" stroke-dasharray="3 4"/>
+<line x1="182" y1="46" x2="182" y2="900" stroke="#CBD5E1" stroke-width="0.5" stroke-dasharray="3 4"/>
+<line x1="295" y1="46" x2="295" y2="900" stroke="#CBD5E1" stroke-width="0.5" stroke-dasharray="3 4"/>
+<line x1="405" y1="46" x2="405" y2="900" stroke="#CBD5E1" stroke-width="0.5" stroke-dasharray="3 4"/>
+<line x1="510" y1="46" x2="510" y2="900" stroke="#CBD5E1" stroke-width="0.5" stroke-dasharray="3 4"/>
+<line x1="617" y1="46" x2="617" y2="900" stroke="#CBD5E1" stroke-width="0.5" stroke-dasharray="3 4"/>
+<line x1="70" y1="75" x2="172" y2="75" stroke="#0F766E" stroke-width="1.5" marker-end="url(#sa)"/>
+<text x="120" y="70" text-anchor="middle" font-size="11" fill="#0F766E" font-weight="500">POST /connections</text>
+<text x="120" y="90" text-anchor="middle" font-size="11" fill="#64748b">{svc, env, bw}</text>
+<rect x="140" y="105" width="84" height="30" rx="4" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="0.5"/>
+<text x="182" y="118" text-anchor="middle" font-size="11" fill="#444441">TLS terminate</text>
+<text x="182" y="130" text-anchor="middle" font-size="11" fill="#5F5E5A">JWT validate</text>
+<line x1="182" y1="145" x2="285" y2="145" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#sa)"/>
+<text x="234" y="141" text-anchor="middle" font-size="11" fill="#5F5E5A">Forward + JWT</text>
+<rect x="248" y="160" width="94" height="54" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="295" y="176" text-anchor="middle" font-size="11" fill="#3C3489" font-weight="500">SSO resolve</text>
+<text x="295" y="190" text-anchor="middle" font-size="11" fill="#534AB7">Svc registry</text>
+<text x="295" y="204" text-anchor="middle" font-size="11" fill="#534AB7">Day 0 config</text>
+<text x="22" y="183" font-size="11" fill="#3C3489" font-weight="500">Identity plane</text>
+<text x="22" y="197" font-size="11" fill="#534AB7">Location plane</text>
+<text x="22" y="211" font-size="11" fill="#534AB7">Infra plane</text>
+<line x1="295" y1="224" x2="295" y2="244" stroke="#534AB7" stroke-width="0.5" stroke-dasharray="3 3"/>
+<rect x="248" y="244" width="94" height="30" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="295" y="257" text-anchor="middle" font-size="11" fill="#3C3489" font-weight="500">Policy engine</text>
+<text x="295" y="269" text-anchor="middle" font-size="11" fill="#534AB7">prod = SNOW</text>
+<line x1="342" y1="259" x2="395" y2="295" stroke="#D85A30" stroke-width="1.5" marker-end="url(#sa)"/>
+<text x="370" y="284" text-anchor="middle" font-size="11" fill="#993C1D">Create RITM</text>
+<rect x="358" y="298" width="94" height="42" rx="4" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+<text x="405" y="314" text-anchor="middle" font-size="11" fill="#712B13" font-weight="500">RITM0042409</text>
+<text x="405" y="328" text-anchor="middle" font-size="11" fill="#993C1D">CMDB CI ref</text>
+<line x1="295" y1="274" x2="80" y2="360" stroke="#534AB7" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#sa)"/>
+<rect x="55" y="362" width="100" height="26" rx="4" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text x="105" y="379" text-anchor="middle" font-size="11" fill="#633806" font-weight="500">202 Accepted</text>
+<text x="105" y="396" text-anchor="middle" font-size="11" fill="#64748b">poll_url + request_id</text>
+<rect x="358" y="420" width="94" height="30" rx="4" fill="#F0FDF4" stroke="#16A34A" stroke-width="0.5"/>
+<text x="405" y="433" text-anchor="middle" font-size="11" fill="#166534" font-weight="500">Manager</text>
+<text x="405" y="445" text-anchor="middle" font-size="11" fill="#16A34A">approves</text>
+<line x1="405" y1="370" x2="405" y2="418" stroke="#993C1D" stroke-width="0.5" stroke-dasharray="3 3"/>
+<line x1="395" y1="450" x2="305" y2="480" stroke="#16A34A" stroke-width="1.5" marker-end="url(#sa)"/>
+<text x="350" y="471" text-anchor="middle" font-size="11" fill="#166534">Webhook callback</text>
+<rect x="248" y="484" width="94" height="30" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="295" y="497" text-anchor="middle" font-size="11" fill="#3C3489" font-weight="500">Mint approval</text>
+<text x="295" y="509" text-anchor="middle" font-size="11" fill="#534AB7">token (JWT 15m)</text>
+<line x1="342" y1="499" x2="500" y2="545" stroke="#854F0B" stroke-width="1.5" marker-end="url(#sa)"/>
+<text x="420" y="528" text-anchor="middle" font-size="11" fill="#633806">AssumeRole</text>
+<rect x="463" y="548" width="94" height="42" rx="4" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text x="510" y="564" text-anchor="middle" font-size="11" fill="#633806" font-weight="500">create-vpc-</text>
+<text x="510" y="578" text-anchor="middle" font-size="11" fill="#633806">endpoint</text>
+<line x1="510" y1="590" x2="510" y2="610" stroke="#854F0B" stroke-width="0.5" stroke-dasharray="3 3"/>
+<rect x="463" y="612" width="94" height="26" rx="4" fill="#F0FDF4" stroke="#16A34A" stroke-width="0.5"/>
+<text x="510" y="629" text-anchor="middle" font-size="11" fill="#166534" font-weight="500">vpce-0newXXX</text>
+<line x1="557" y1="625" x2="607" y2="660" stroke="#185FA5" stroke-width="1.5" marker-end="url(#sa)"/>
+<text x="582" y="648" text-anchor="middle" font-size="11" fill="#0C447C">Accept PL</text>
+<rect x="570" y="663" width="94" height="42" rx="4" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="617" y="679" text-anchor="middle" font-size="11" fill="#0C447C" font-weight="500">Accept private</text>
+<text x="617" y="693" text-anchor="middle" font-size="11" fill="#0C447C">link attachment</text>
+<line x1="607" y1="705" x2="305" y2="740" stroke="#185FA5" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#sa)"/>
+<text x="456" y="729" text-anchor="middle" font-size="11" fill="#0C447C">Connection active</text>
+<rect x="248" y="744" width="94" height="42" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="295" y="760" text-anchor="middle" font-size="11" fill="#3C3489" font-weight="500">Close RITM</text>
+<text x="295" y="774" text-anchor="middle" font-size="11" fill="#534AB7">Start billing</text>
+<line x1="295" y1="786" x2="405" y2="810" stroke="#993C1D" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#sa)"/>
+<text x="350" y="804" text-anchor="middle" font-size="11" fill="#993C1D">Auto-close RITM</text>
+<line x1="248" y1="765" x2="80" y2="840" stroke="#0F766E" stroke-width="1.5" marker-end="url(#sa)"/>
+<rect x="30" y="843" width="160" height="50" rx="6" fill="#F0FDF4" stroke="#16A34A" stroke-width="0.5"/>
+<text x="110" y="858" text-anchor="middle" font-size="11" fill="#166534" font-weight="600">200 OK</text>
+<text x="110" y="872" text-anchor="middle" font-size="11" fill="#166534">bootstrap: pkc-prod01...</text>
+<text x="110" y="886" text-anchor="middle" font-size="11" fill="#16A34A">private_ip: 10.0.1.47</text>
+<text x="250" y="865" font-size="12" fill="#64748b">Developer asked for 3 fields.</text>
+<text x="250" y="880" font-size="12" fill="#64748b">6 systems resolved everything.</text>
+<text x="250" y="895" font-size="12" fill="#64748b" font-weight="500">Developer got Kafka. Zero infra knowledge.</text>
+</svg>
+</div>
+`;
+}
+
+function var_accent(){return 'var(--accent)'}
+function var_teal(){return 'var(--teal)'}
+function var_amber(){return 'var(--amber)'}
+function var_purple(){return 'var(--purple)'}
+function var_green(){return 'var(--green)'}
+
+function flowStep(n,color,title,desc,side,last){
+  return `<div class="flow-step">
+<div class="flow-line-area"><div class="flow-num" style="background:${color}">${n}</div>${last?'':'<div class="flow-connector"></div>'}</div>
+<div class="flow-body"><div class="flow-title">${title}</div><div class="flow-desc">${desc}</div></div>
+<div class="flow-side"><strong>${side.split('→')[0]}</strong>${side.includes('→')?'→'+side.split('→').slice(1).join('→'):''}</div>
+</div>`}
+
+function renderDay0(){
+  return `
+<div class="sl">Day 0 — team cloud config registration</div>
+<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px">Platform team registers each team's cloud accounts, VPCs, IAM roles, and SSO groups before developers can request connections. Configs are validated against CSP APIs and synced to SNOW CMDB.</p>
+
+${TEAMS.map(t=>`
+<div class="card">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<h3 style="margin:0">${t.name} <span class="badge-sm b-info">${t.sso}</span> <span class="mono" style="font-size:11px;color:var(--muted)">${t.cc}</span></h3>
+<span style="font-size:11px;color:var(--muted)">Approvers: ${t.approvers.join(', ')}</span>
+</div>
+<table class="tbl">
+<tr><th>CSP</th><th>Account</th><th>Region</th><th>Env</th><th>VPC / CIDR</th><th>Subnets</th><th>IAM role</th><th>SG</th><th>Status</th></tr>
+${t.accounts.map(a=>`<tr>
+<td>${cspBadge(a.csp)}</td>
+<td class="mono" style="font-size:10px">${a.acct}</td>
+<td style="font-size:11px">${a.region}</td>
+<td><span class="badge-sm ${a.env==='prod'?'b-err':'b-ok'}">${a.env}</span></td>
+<td class="mono" style="font-size:10px">${a.vpc}<br>${a.cidr}</td>
+<td style="font-size:10px">${a.subnets.join('<br>')}</td>
+<td class="mono" style="font-size:9px;max-width:180px;overflow:hidden;text-overflow:ellipsis">${a.iam}</td>
+<td class="mono" style="font-size:10px">${a.sg}</td>
+<td><span class="badge-sm b-ok">Verified</span></td>
+</tr>`).join('')}
+</table>
+</div>`).join('')}
+
+<div class="sl">Pre-flight validation checks</div>
+<div class="code"><span class="cc">// Runs on registration + nightly cron</span>
+<span class="ck">check</span> iam_role_assumable     <span class="cs">✓ PASS</span>
+<span class="ck">check</span> vpc_exists             <span class="cs">✓ PASS</span>
+<span class="ck">check</span> subnets_multi_az       <span class="cs">✓ PASS</span>
+<span class="ck">check</span> sg_allows_9092         <span class="cs">✓ PASS</span>
+<span class="ck">check</span> no_cidr_overlap        <span class="cs">✓ PASS</span>
+<span class="ck">check</span> dns_private_zone       <span class="cs">✓ PASS</span>
+<span class="ck">check</span> endpoint_quota         <span class="cs">✓ PASS</span> (18/50 used)</div>
+`;
+}
+
+function renderRegistry(){
+  return `
+<div class="sl">Service registry — where services actually run</div>
+<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px">Source of truth: Backstage / ArgoCD. NaaS reads this to resolve CSP + region from the service name — the developer never specifies infrastructure.</p>
+<table class="tbl">
+<tr><th>Service</th><th>Team</th><th>Owner</th><th>Env</th><th>Cluster</th><th>CSP</th><th>Region</th><th>Namespace</th><th>Replicas</th><th>Day 0</th></tr>
+${Object.entries(SERVICES).flatMap(([n,s])=>s.deps.map(d=>{
+  const cfg=findDay0(s.team,d.env,d.csp,d.region);
+  return `<tr>
+<td style="font-weight:600">${n}</td>
+<td style="font-size:11px">${s.team}</td>
+<td style="font-size:11px">${s.owner}</td>
+<td><span class="badge-sm ${d.env==='prod'?'b-err':d.env==='perf'?'b-warn':'b-ok'}">${d.env}</span></td>
+<td class="mono" style="font-size:10px">${d.cluster}</td>
+<td>${cspBadge(d.csp)}</td>
+<td style="font-size:11px">${d.region}</td>
+<td class="mono" style="font-size:10px">${d.ns}</td>
+<td>${d.rep}</td>
+<td>${cfg?'<span class="badge-sm b-ok">Linked</span>':'<span class="badge-sm b-warn">Missing</span>'}</td>
+</tr>`})).join('')}
+</table>
+`;
+}
+
+function renderPortal(){
+  const svc=SERVICES[demoSvc];
+  const team=svc?TEAMS.find(t=>t.name===svc.team):null;
+  return `
+<div class="sl">Developer self-serve portal — 3 fields, zero infra</div>
+<div class="demo-row">
+<div class="demo-field"><label>Service</label><select id="ds" onchange="demoSvc=this.value;demoResult=null;render()">${Object.keys(SERVICES).map(s=>`<option ${demoSvc===s?'selected':''}>${s}</option>`).join('')}</select></div>
+<div class="demo-field"><label>Environment</label><select id="de" onchange="demoEnv=this.value;demoResult=null;render()">${['dev','qa','perf','prod'].map(e=>`<option ${demoEnv===e?'selected':''}>${e}</option>`).join('')}</select></div>
+<button class="btn btn-primary" onclick="runResolve()">Request Kafka connection</button>
+</div>
+<div class="code"><span class="cc">// What the developer sends</span>
+{ <span class="cs">"service"</span>: <span class="cs">"${demoSvc}"</span>, <span class="cs">"environment"</span>: <span class="cs">"${demoEnv}"</span>, <span class="cs">"bandwidth_mbps"</span>: <span class="cn">500</span> }</div>
+${demoResult||'<div class="alert alert-info">Click "Request Kafka connection" to see the full resolution chain.</div>'}
+`;
+}
+
+function runResolve(){
+  const svc=SERVICES[demoSvc];
+  if(!svc){demoResult='<div class="alert alert-err">404 — service not found in registry.</div>';render();return}
+  const deps=svc.deps.filter(d=>d.env===demoEnv);
+  if(!deps.length){demoResult=`<div class="alert alert-err">404 — <strong>${demoSvc}</strong> has no deployment in <strong>${demoEnv}</strong>. Available: ${[...new Set(svc.deps.map(d=>d.env))].join(', ')}</div>`;render();return}
+  const team=TEAMS.find(t=>t.name===svc.team);
+  let h=`<div class="sl">Step 1 — SSO identity</div>
+<div class="card"><p style="font-size:12px;line-height:1.6">Caller: <strong>${svc.owner}@acme.com</strong> · SSO: <span class="badge-sm b-info">${team.sso}</span> · Team: <strong>${team.name}</strong> · Cost center: <span class="mono">${team.cc}</span> · Approver: ${team.approvers[0]}</p></div>
+<div class="sl">Step 2 — service registry: ${demoSvc} in ${demoEnv}</div>
+<div class="card">${deps.map(d=>`<div class="resolve-chain">
+<div class="resolve-node" style="background:var(--accent-light);color:var(--accent)">${demoSvc}</div><span class="resolve-arrow">→</span>
+<div class="resolve-node">${d.cluster}</div><span class="resolve-arrow">→</span>
+<div class="resolve-node">${cspBadge(d.csp)} ${d.region}</div><span class="resolve-arrow">→</span>
+<div class="resolve-node">${d.ns} (${d.rep} replicas)</div>
+</div>`).join('')}</div>
+<div class="sl">Step 3 — Day 0 config match</div>`;
+  let conns=[];
+  deps.forEach(d=>{const cfg=findDay0(svc.team,d.env,d.csp,d.region);
+    if(!cfg){h+=`<div class="alert alert-err">422 — No Day 0 config for ${svc.team}/${d.env}/${d.csp}/${d.region}. Platform team must register.</div>`;return}
+    const bs=`pkc-${d.env}01.${d.region}.${d.csp}.confluent.cloud:9092`;
+    const ep=`${d.csp==='aws'?'vpce':d.csp==='azure'?'pe':'psc'}-${demoSvc.replace('-svc','')}-${d.region.replace(/-/g,'').substring(0,6)}`;
+    conns.push({csp:d.csp,region:d.region,bs,ep,vpc:cfg.vpc,iam:cfg.iam,sg:cfg.sg});
+    h+=`<div class="card"><div style="font-size:12px;line-height:1.7">
+${cspBadge(d.csp)} <strong>${d.region}</strong> · VPC: <span class="mono">${cfg.vpc}</span> (${cfg.cidr}) · Subnets: <span class="mono">${cfg.subnets.join(', ')}</span><br>
+IAM: <span class="mono" style="font-size:10px">${cfg.iam}</span> · SG: <span class="mono">${cfg.sg}</span></div></div>`});
+  if(conns.length){
+    const snow=demoEnv==='prod';
+    h+=`<div class="sl">Step 4 — ${snow?'SNOW approval (prod)':'Auto-approved'}</div>
+${snow?`<div class="alert alert-warn"><strong>SNOW RITM created</strong> — ${conns.length} location${conns.length>1?'s':''}. Routed to ${team.approvers[0]}. Projected: $${(conns.length*71.40).toFixed(2)}/mo.</div>`:'<div class="alert alert-ok"><strong>Auto-approved</strong> — dev/QA, under threshold.</div>'}
+<div class="sl">Step 5 — developer receives</div>
+<div class="alert alert-ok"><strong>${conns.length>1?conns.length+' multi-cloud endpoints provisioned':'Endpoint provisioned'}</strong></div>
+<div class="code"><span class="cc">// response — paste into code</span>
+{
+  <span class="cs">"connections"</span>: [${conns.map(c=>`
+    { <span class="cs">"bootstrap"</span>: <span class="cs">"${c.bs}"</span>,
+      <span class="cs">"endpoint"</span>: <span class="cs">"${c.ep}"</span> }`).join(',')}
+  ],
+  <span class="cs">"env_vars"</span>: {
+    <span class="cs">"KAFKA_BOOTSTRAP_SERVERS"</span>: <span class="cs">"${conns.map(c=>c.bs).join(',')}"</span>,
+    <span class="cs">"KAFKA_API_KEY"</span>: <span class="cs">"XXXXXXXX"</span>,
+    <span class="cs">"KAFKA_API_SECRET"</span>: <span class="cs">"********"</span>
+  }
+}</div>`}
+  demoResult=h;render();
+}
+
+function renderPlayground(){
+  return `
+<div class="sl">API playground — try the Conduit API</div>
+<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">Interactive API explorer. Authenticated via your SSO token. All endpoints use the same base URL and headers.</p>
+
+<div class="card" style="border-top:3px solid var(--accent)">
+<h3>POST /api/v1/connections</h3>
+<div style="font-size:11px;color:var(--muted);margin-bottom:10px">Request a private connection to any registered SaaS provider.</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+<div><label style="font-size:11px;color:var(--muted)">Authorization</label><input value="Bearer eyJhbGciOiJSUzI1NiIs..." style="font-size:11px;font-family:var(--mono)" readonly></div>
+<div><label style="font-size:11px;color:var(--muted)">Content-Type</label><input value="application/json" style="font-size:11px" readonly></div>
+</div>
+<div style="font-size:11px;font-weight:600;margin:8px 0 4px">Request body (editable)</div>
+<textarea id="pg-body" style="width:100%;height:140px;font-family:var(--mono);font-size:11px;padding:10px;border:1px solid var(--border);border-radius:6px;line-height:1.6;resize:vertical">{
+  "service": "order-svc",
+  "environment": "prod",
+  "bandwidth_mbps": 500,
+  "topics": ["orders-events"],
+  "lifecycle": "always_on",
+  "ttl_hours": 0,
+  "webhook_url": ""
+}</textarea>
+<div style="display:flex;gap:8px;margin:8px 0"><button class="btn btn-primary" onclick="pgRun()">Send request</button><button class="btn btn-outline" onclick="pgReset()">Reset</button></div>
+<div id="pg-result"></div>
+</div>
+
+<div class="sl">All endpoints</div>
+<table class="tbl">
+<tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr>
+<tr><td><span class="badge-sm" style="background:var(--green);color:#fff">POST</span></td><td class="mono" style="font-size:11px">/api/v1/connections</td><td style="font-size:10px">Bearer JWT</td><td style="font-size:11px">Request connection. Returns 200 (auto) or 202 (SNOW).</td></tr>
+<tr><td><span class="badge-sm" style="background:var(--accent);color:#fff">GET</span></td><td class="mono" style="font-size:11px">/api/v1/connections</td><td style="font-size:10px">Bearer JWT</td><td style="font-size:11px">List my connections. Filters: status, service, env, saas.</td></tr>
+<tr><td><span class="badge-sm" style="background:var(--accent);color:#fff">GET</span></td><td class="mono" style="font-size:11px">/api/v1/connections/{id}</td><td style="font-size:10px">Bearer JWT</td><td style="font-size:11px">Get connection details.</td></tr>
+<tr><td><span class="badge-sm" style="background:var(--accent);color:#fff">GET</span></td><td class="mono" style="font-size:11px">/api/v1/connections/{id}/status</td><td style="font-size:10px">Bearer JWT</td><td style="font-size:11px">Poll: PENDING → APPROVED → PROVISIONING → ACTIVE.</td></tr>
+<tr><td><span class="badge-sm" style="background:var(--accent);color:#fff">GET</span></td><td class="mono" style="font-size:11px">/api/v1/connections/{id}/env?format=</td><td style="font-size:10px">Bearer JWT</td><td style="font-size:11px">Env vars: json, dotenv, k8s-configmap, k8s-secret, docker.</td></tr>
+<tr><td><span class="badge-sm" style="background:var(--red);color:#fff">DEL</span></td><td class="mono" style="font-size:11px">/api/v1/connections/{id}</td><td style="font-size:10px">JWT + X-Step-Up</td><td style="font-size:11px">Revoke. Dev=200, Perf=MFA, Prod=SNOW CHG + 30m grace.</td></tr>
+<tr><td><span class="badge-sm" style="background:var(--green);color:#fff">POST</span></td><td class="mono" style="font-size:11px">/api/v1/connections/{id}/cancel-delete</td><td style="font-size:10px">Bearer JWT</td><td style="font-size:11px">Cancel prod revocation during 30m grace period.</td></tr>
+<tr style="background:var(--surface2)"><td colspan="4" style="font-size:10px;color:var(--muted);font-weight:600">ADMIN (requires conduit-admin role)</td></tr>
+<tr><td><span class="badge-sm" style="background:var(--green);color:#fff">POST</span></td><td class="mono" style="font-size:11px">/api/v1/admin/teams</td><td style="font-size:10px">JWT + admin</td><td style="font-size:11px">Register team (SSO group, cost center, approvers).</td></tr>
+<tr><td><span class="badge-sm" style="background:var(--green);color:#fff">POST</span></td><td class="mono" style="font-size:11px">/api/v1/admin/teams/{team}/accounts</td><td style="font-size:10px">JWT + admin</td><td style="font-size:11px">Register cloud account (VPC, IAM, SG).</td></tr>
+<tr><td><span class="badge-sm" style="background:var(--amber);color:#fff">POST</span></td><td class="mono" style="font-size:11px">/api/v1/admin/teams/{team}/validate</td><td style="font-size:10px">JWT + admin</td><td style="font-size:11px">Run pre-flight validation.</td></tr>
+<tr><td><span class="badge-sm" style="background:var(--accent);color:#fff">GET</span></td><td class="mono" style="font-size:11px">/api/v1/admin/connections</td><td style="font-size:10px">JWT + admin</td><td style="font-size:11px">List all connections (all teams).</td></tr>
+<tr style="background:var(--surface2)"><td colspan="4" style="font-size:10px;color:var(--muted);font-weight:600">WEBHOOKS (HMAC-signed)</td></tr>
+<tr><td><span class="badge-sm" style="background:var(--green);color:#fff">POST</span></td><td class="mono" style="font-size:11px">/api/v1/callbacks/approval</td><td style="font-size:10px">HMAC</td><td style="font-size:11px">SNOW/Jira approval callback → triggers provisioning.</td></tr>
+<tr><td><span class="badge-sm" style="background:var(--green);color:#fff">POST</span></td><td class="mono" style="font-size:11px">/api/v1/callbacks/registry</td><td style="font-size:10px">HMAC</td><td style="font-size:11px">ArgoCD webhook → updates service-cluster mappings.</td></tr>
+<tr style="background:var(--surface2)"><td colspan="4" style="font-size:10px;color:var(--muted);font-weight:600">BILLING</td></tr>
+<tr><td><span class="badge-sm" style="background:var(--accent);color:#fff">GET</span></td><td class="mono" style="font-size:11px">/api/v1/billing/usage?conn_id=</td><td style="font-size:10px">Bearer JWT</td><td style="font-size:11px">Per-connection usage.</td></tr>
+<tr><td><span class="badge-sm" style="background:var(--accent);color:#fff">GET</span></td><td class="mono" style="font-size:11px">/api/v1/billing/chargeback?team=&saas=</td><td style="font-size:10px">Bearer JWT</td><td style="font-size:11px">Team chargeback by SaaS provider.</td></tr>
+</table>
+
+<div class="sl">Registered SaaS providers</div>
+<table class="tbl">
+<tr><th>Provider</th><th>Type</th><th>Regions</th><th>Connection type</th><th>Acceptor plugin</th></tr>
+${Object.entries(SAAS).map(([k,s])=>`<tr>
+<td>${saasBadge(k)}</td>
+<td style="font-size:11px">${s.type}</td>
+<td style="font-size:10px">${s.regions.map(r=>cspBadge(r.csp)+' '+r.region).join('<br>')}</td>
+<td style="font-size:10px">${s.regions.map(r=>r.csp==='aws'?'PrivateLink':r.csp==='azure'?'Private Endpoint':'PSC').filter((v,i,a)=>a.indexOf(v)===i).join(', ')}</td>
+<td style="font-size:10px" class="mono">${k}_acceptor.go</td>
+</tr>`).join('')}
+</table>
+`;
+}
+function pgRun(){
+  try{const b=JSON.parse(document.getElementById('pg-body').value);
+  const svc=SERVICES[b.service],team=svc?TEAMS.find(t=>t.name===svc.team):null;
+  if(!svc){document.getElementById('pg-result').innerHTML='<div class="alert alert-err" style="margin-top:8px"><strong>404</strong> — Service "'+b.service+'" not in registry.</div>';return}
+  const deps=svc.deps.filter(d=>d.env===b.environment);
+  if(!deps.length){document.getElementById('pg-result').innerHTML='<div class="alert alert-err" style="margin-top:8px"><strong>404</strong> — No deployment in "'+b.environment+'". Available: '+[...new Set(svc.deps.map(d=>d.env))].join(', ')+'</div>';return}
+  const isProd=b.environment==='prod';
+  const conns=deps.map(d=>({csp:d.csp,region:d.region,bootstrap:'pkc-'+b.environment+'01.'+d.region+'.'+d.csp+'.saas.cloud:9092',ip:'10.'+Math.floor(Math.random()*255)+'.1.'+Math.floor(Math.random()*255),ep:(d.csp==='aws'?'vpce':d.csp==='azure'?'pe':'psc')+'-'+b.service.replace('-svc','')+'-'+d.region.substring(0,6)}));
+  const resp=isProd?{request_id:'REQ-'+Math.floor(Math.random()*9000+1000),status:'PENDING_APPROVAL',snow_ritm:'RITM004'+Math.floor(Math.random()*9000+1000),approver:team.approvers[0],resolved:{team:team.name,locations:conns.length,projected_monthly:'$'+(conns.length*71.40).toFixed(2)},poll_url:'/api/v1/connections/REQ-.../status'}
+  :{connection_id:'conn-'+Math.random().toString(36).substring(2,6),status:'ACTIVE',resolved:{team:team.name,cost_center:team.cc,approval:'auto'},connections:conns.map(c=>({csp:c.csp,region:c.region,bootstrap:c.bootstrap,private_ip:c.ip,endpoint_id:c.ep})),env_vars:{KAFKA_BOOTSTRAP_SERVERS:conns.map(c=>c.bootstrap).join(','),KAFKA_API_KEY:'XXXXXXXXXXXXXXXX',KAFKA_API_SECRET:'********'}};
+  document.getElementById('pg-result').innerHTML=`<div style="margin-top:8px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="badge-sm" style="background:${isProd?'var(--amber)':'var(--green)'};color:#fff">${isProd?'202 Accepted':'200 OK'}</span><span style="font-size:11px;color:var(--muted)">${Math.floor(Math.random()*200+50)}ms</span></div><div class="code" style="font-size:10px">${JSON.stringify(resp,null,2)}</div></div>`;
+  }catch(e){document.getElementById('pg-result').innerHTML='<div class="alert alert-err" style="margin-top:8px">Invalid JSON: '+e.message+'</div>'}
+}
+function pgReset(){document.getElementById('pg-body').value='{\n  "service": "order-svc",\n  "environment": "prod",\n  "bandwidth_mbps": 500,\n  "topics": ["orders-events"],\n  "lifecycle": "always_on",\n  "ttl_hours": 0,\n  "webhook_url": ""\n}';document.getElementById('pg-result').innerHTML=''}
+
+function renderApproval(){
+  const pending=CONNECTIONS.filter(c=>c.status==='pending');
+  const active=CONNECTIONS.filter(c=>c.status==='active'&&c.approval==='snow');
+  return `
+<div class="sl">Pending SNOW approvals (${pending.length})</div>
+${pending.map(c=>`<div class="approval-card">
+<div style="display:flex;justify-content:space-between;align-items:start">
+<div><div style="font-size:14px;font-weight:600">${c.requester}@acme.com → ${c.svc} (${c.env})</div>
+<div style="font-size:11px;color:var(--muted);margin-top:4px">${saasBadge(c.saas)} <span class="mono">${c.ritm}</span> · ${cspBadge(c.csp)} ${c.region} · ${c.team} · ${c.bw} Mbps · $${(c.bw*0.0095*30).toFixed(2)}/mo projected</div></div>
+<span class="badge-sm b-warn">Awaiting approval</span></div>
+<div style="margin-top:10px;display:flex;gap:6px">
+<button class="btn btn-primary" style="font-size:11px;padding:6px 14px" onclick="approveConn('${c.id}')">Approve</button>
+<button class="btn btn-outline" style="font-size:11px;padding:6px 14px;color:var(--red)" onclick="rejectConn('${c.id}')">Reject</button>
+</div></div>`).join('')}
+
+<div class="sl">SNOW → token → CSP provisioning flow</div>
+<div class="code"><span class="cc">// 1. NaaS → SNOW Table API: create RITM</span>
+<span class="ck">POST</span> https://acme.service-now.com/api/now/table/sc_req_item
+{ <span class="cs">"short_description"</span>: <span class="cs">"NaaS: fraud-detector → prod (aws/us-east-1)"</span>,
+  <span class="cs">"assignment_group"</span>: <span class="cs">"NaaS Approvers — Data"</span>,
+  <span class="cs">"cmdb_ci"</span>: <span class="cs">"Data-prod-aws-us-east-1"</span> }
+
+<span class="cc">// 2. Manager approves → SNOW webhook fires back</span>
+<span class="ck">POST</span> https://naas.internal/api/v1/callbacks/snow
+{ <span class="cs">"ritm"</span>: <span class="cs">"RITM0042409"</span>, <span class="cs">"state"</span>: <span class="cs">"approved"</span>, <span class="cs">"approver"</span>: <span class="cs">"james.liu"</span> }
+
+<span class="cc">// 3. NaaS mints approval token (JWT, 15m TTL)</span>
+{ <span class="cs">"sub"</span>: <span class="cs">"CONN-009"</span>, <span class="cs">"action"</span>: <span class="cs">"create_vpc_endpoint"</span>,
+  <span class="cs">"scope"</span>: <span class="cs">"vpc-0data-prod:subnet-data-01a,01b"</span> }
+
+<span class="cc">// 4. Token → CSP API (using Day 0 IAM role)</span>
+<span class="ck">aws sts assume-role</span> --role-arn arn:aws:iam::555666777888:role/NaaSProvisioner
+<span class="ck">aws ec2 create-vpc-endpoint</span> --vpc-id vpc-0data-prod --service-name ...confluent...
+
+<span class="cc">// 5. Confluent accepts → RITM auto-closed → billing starts</span></div>
+
+<div class="sl">Recently approved (${active.length})</div>
+<table class="tbl">
+<tr><th>RITM</th><th>Service</th><th>CSP / Region</th><th>Requester</th><th>Approver</th><th>Created</th></tr>
+${active.slice(0,5).map(c=>`<tr><td class="mono" style="font-size:10px">${c.ritm}</td><td>${c.svc} <span class="badge-sm ${c.env==='prod'?'b-err':'b-ok'}">${c.env}</span></td><td>${cspBadge(c.csp)} ${c.region}</td><td style="font-size:11px">${c.requester}</td><td style="font-size:11px">${c.approver}</td><td style="font-size:11px">${c.created}</td></tr>`).join('')}
+</table>`;
+}
+
+function approveConn(id){const c=CONNECTIONS.find(x=>x.id===id);if(c){c.status='active';c.approver='you';c.dur='0h'}render()}
+function rejectConn(id){const c=CONNECTIONS.find(x=>x.id===id);if(c){c.status='rejected';c.approver='you'}render()}
+
+function renderTopology(){
+  const active=CONNECTIONS.filter(c=>c.status==='active');
+  const byCsp={};active.forEach(c=>{(byCsp[c.csp]=byCsp[c.csp]||[]).push(c)});
+  return `
+<div class="sl">Multi-cloud overlay — Acme workloads ↔ Confluent clusters</div>
+<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">Each arrow is a private endpoint — PrivateLink (AWS), Private Endpoint (Azure), or PSC (GCP). Zero internet hops. The developer doesn't know which CSP their service uses.</p>
+
+<div class="card" style="padding:8px;overflow-x:auto">
+<svg width="100%" viewBox="0 0 680 520" style="display:block">
+<defs><marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<text style="font-family:var(--font);font-size:12px;font-weight:600;fill:var(--muted)" x="130" y="18" text-anchor="middle">ACME CORP WORKLOADS</text>
+<text style="font-family:var(--font);font-size:12px;font-weight:600;fill:var(--muted)" x="540" y="18" text-anchor="middle">CONFLUENT CLOUD</text>
+<rect x="40" y="32" width="200" height="115" rx="10" fill="#FFF7ED" stroke="#EA580C" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:12px;font-weight:600;fill:#9A3412" x="140" y="50" text-anchor="middle">AWS us-east-1</text>
+<rect x="55" y="60" width="78" height="26" rx="4" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/><text style="font-family:var(--font);font-size:10px;fill:#0F766E;font-weight:500" x="94" y="77" text-anchor="middle">order-svc</text>
+<rect x="147" y="60" width="78" height="26" rx="4" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/><text style="font-family:var(--font);font-size:10px;fill:#0F766E;font-weight:500" x="186" y="77" text-anchor="middle">payment-svc</text>
+<rect x="55" y="96" width="78" height="26" rx="4" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/><text style="font-family:var(--font);font-size:10px;fill:#0F766E;font-weight:500" x="94" y="113" text-anchor="middle">data-export</text>
+<rect x="147" y="96" width="78" height="26" rx="4" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/><text style="font-family:var(--font);font-size:10px;fill:#0F766E;font-weight:500" x="186" y="113" text-anchor="middle">fraud-detect</text>
+
+<rect x="40" y="165" width="200" height="85" rx="10" fill="#EFF6FF" stroke="#2563EB" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:12px;font-weight:600;fill:#1E40AF" x="140" y="183" text-anchor="middle">Azure eastus</text>
+<rect x="55" y="195" width="78" height="26" rx="4" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/><text style="font-family:var(--font);font-size:10px;fill:#0F766E;font-weight:500" x="94" y="212" text-anchor="middle">ml-pipeline</text>
+<rect x="147" y="195" width="78" height="26" rx="4" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/><text style="font-family:var(--font);font-size:10px;fill:#0F766E;font-weight:500" x="186" y="212" text-anchor="middle">reco-engine</text>
+
+<rect x="40" y="268" width="200" height="65" rx="10" fill="#F0FDF4" stroke="#16A34A" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:12px;font-weight:600;fill:#166534" x="140" y="286" text-anchor="middle">GCP europe-west1</text>
+<rect x="55" y="298" width="78" height="26" rx="4" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/><text style="font-family:var(--font);font-size:10px;fill:#0F766E;font-weight:500" x="94" y="315" text-anchor="middle">order-svc</text>
+
+<rect x="40" y="351" width="200" height="65" rx="10" fill="#EFF6FF" stroke="#2563EB" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:12px;font-weight:600;fill:#1E40AF" x="140" y="369" text-anchor="middle">Azure westeurope</text>
+<rect x="55" y="381" width="78" height="26" rx="4" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/><text style="font-family:var(--font);font-size:10px;fill:#0F766E;font-weight:500" x="94" y="398" text-anchor="middle">data-export</text>
+
+<rect x="430" y="32" width="220" height="75" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:12px;font-weight:600;fill:#633806" x="540" y="50" text-anchor="middle">pkc-prod01 (AWS us-east-1)</text>
+<rect x="445" y="60" width="50" height="22" rx="3" fill="#fff" stroke="#854F0B" stroke-width="0.5"/><text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="470" y="75" text-anchor="middle">B1</text>
+<rect x="505" y="60" width="50" height="22" rx="3" fill="#fff" stroke="#854F0B" stroke-width="0.5"/><text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="530" y="75" text-anchor="middle">B2</text>
+<rect x="565" y="60" width="50" height="22" rx="3" fill="#fff" stroke="#854F0B" stroke-width="0.5"/><text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="590" y="75" text-anchor="middle">B3</text>
+
+<rect x="430" y="127" width="220" height="75" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:12px;font-weight:600;fill:#633806" x="540" y="145" text-anchor="middle">pkc-az01 (Azure eastus)</text>
+<rect x="445" y="155" width="50" height="22" rx="3" fill="#fff" stroke="#854F0B" stroke-width="0.5"/><text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="470" y="170" text-anchor="middle">B1</text>
+<rect x="505" y="155" width="50" height="22" rx="3" fill="#fff" stroke="#854F0B" stroke-width="0.5"/><text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="530" y="170" text-anchor="middle">B2</text>
+<rect x="565" y="155" width="50" height="22" rx="3" fill="#fff" stroke="#854F0B" stroke-width="0.5"/><text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="590" y="170" text-anchor="middle">B3</text>
+
+<rect x="430" y="222" width="220" height="75" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:12px;font-weight:600;fill:#633806" x="540" y="240" text-anchor="middle">pkc-gcpeu01 (GCP ew1)</text>
+<rect x="445" y="250" width="50" height="22" rx="3" fill="#fff" stroke="#854F0B" stroke-width="0.5"/><text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="470" y="265" text-anchor="middle">B1</text>
+<rect x="505" y="250" width="50" height="22" rx="3" fill="#fff" stroke="#854F0B" stroke-width="0.5"/><text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="530" y="265" text-anchor="middle">B2</text>
+<rect x="565" y="250" width="50" height="22" rx="3" fill="#fff" stroke="#854F0B" stroke-width="0.5"/><text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="590" y="265" text-anchor="middle">B3</text>
+
+<rect x="430" y="317" width="220" height="75" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:12px;font-weight:600;fill:#633806" x="540" y="335" text-anchor="middle">pkc-azeu01 (Azure weu)</text>
+<rect x="445" y="345" width="50" height="22" rx="3" fill="#fff" stroke="#854F0B" stroke-width="0.5"/><text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="470" y="360" text-anchor="middle">B1</text>
+<rect x="505" y="345" width="50" height="22" rx="3" fill="#fff" stroke="#854F0B" stroke-width="0.5"/><text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="530" y="360" text-anchor="middle">B2</text>
+<rect x="565" y="345" width="50" height="22" rx="3" fill="#fff" stroke="#854F0B" stroke-width="0.5"/><text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="590" y="360" text-anchor="middle">B3</text>
+
+<line x1="240" y1="75" x2="428" y2="65" stroke="#EA580C" stroke-width="1.5" marker-end="url(#a1)"/>
+<text style="font-family:var(--mono);font-size:9px;fill:#EA580C" x="334" y="62">PrivateLink</text>
+<line x1="240" y1="208" x2="428" y2="165" stroke="#2563EB" stroke-width="1.5" marker-end="url(#a1)"/>
+<text style="font-family:var(--mono);font-size:9px;fill:#2563EB" x="334" y="178">Private Endpoint</text>
+<line x1="240" y1="311" x2="428" y2="260" stroke="#16A34A" stroke-width="1.5" marker-end="url(#a1)"/>
+<text style="font-family:var(--mono);font-size:9px;fill:#16A34A" x="334" y="278">PSC</text>
+<line x1="240" y1="394" x2="428" y2="355" stroke="#2563EB" stroke-width="1.5" marker-end="url(#a1)"/>
+<text style="font-family:var(--mono);font-size:9px;fill:#2563EB" x="334" y="368">Private Endpoint</text>
+
+<rect x="430" y="410" width="220" height="95" rx="10" fill="#F1F3F5" stroke="#CBD5E1" stroke-width="0.5" stroke-dasharray="4 3"/>
+<text style="font-family:var(--font);font-size:11px;fill:#64748b;font-weight:500" x="540" y="430" text-anchor="middle">Other tenants (isolated)</text>
+<rect x="445" y="440" width="92" height="24" rx="3" fill="#F8F9FB" stroke="#CBD5E1" stroke-width="0.5"/><text style="font-family:var(--font);font-size:9px;fill:#94A3B8" x="491" y="456" text-anchor="middle">Tenant B</text>
+<rect x="547" y="440" width="92" height="24" rx="3" fill="#F8F9FB" stroke="#CBD5E1" stroke-width="0.5"/><text style="font-family:var(--font);font-size:9px;fill:#94A3B8" x="593" y="456" text-anchor="middle">Tenant C</text>
+<rect x="445" y="472" width="92" height="24" rx="3" fill="#F8F9FB" stroke="#CBD5E1" stroke-width="0.5"/><text style="font-family:var(--font);font-size:9px;fill:#94A3B8" x="491" y="488" text-anchor="middle">Tenant D</text>
+<rect x="547" y="472" width="92" height="24" rx="3" fill="#F8F9FB" stroke="#CBD5E1" stroke-width="0.5"/><text style="font-family:var(--font);font-size:9px;fill:#94A3B8" x="593" y="488" text-anchor="middle">Tenant E</text>
+<text style="font-family:var(--font);font-size:9px;fill:#94A3B8" x="540" y="510" text-anchor="middle">No lateral movement between tenants</text>
+</svg>
+</div>
+
+<div class="sl">Underlay deep dive — pod to broker (AWS us-east-1)</div>
+<div class="card" style="padding:8px;overflow-x:auto">
+<svg width="100%" viewBox="0 0 680 400" style="display:block">
+<defs><marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+<rect x="30" y="10" width="300" height="160" rx="12" fill="#FFF7ED" stroke="#EA580C" stroke-width="0.5" stroke-dasharray="5 3"/>
+<text style="font-family:var(--font);font-size:11px;font-weight:600;fill:#9A3412" x="180" y="28">Acme VPC: vpc-0comm-prod (10.0.0.0/16)</text>
+
+<rect x="50" y="42" width="120" height="40" rx="6" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:11px;font-weight:500;fill:#0F766E" x="110" y="58" text-anchor="middle">EKS cluster</text>
+<text style="font-family:var(--mono);font-size:9px;fill:#0F766E" x="110" y="72" text-anchor="middle">eks-prod-use1</text>
+
+<rect x="190" y="42" width="120" height="40" rx="6" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:11px;font-weight:500;fill:#0F766E" x="250" y="58" text-anchor="middle">order-svc pod</text>
+<text style="font-family:var(--mono);font-size:9px;fill:#0F766E" x="250" y="72" text-anchor="middle">10.0.1.12:8080</text>
+
+<line x1="170" y1="62" x2="188" y2="62" stroke="#0F766E" stroke-width="1" marker-end="url(#a2)"/>
+
+<rect x="80" y="105" width="200" height="40" rx="6" fill="#F5F3FF" stroke="#7C3AED" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:11px;font-weight:500;fill:#5B21B6" x="180" y="121" text-anchor="middle">VPC endpoint: vpce-0abc1234</text>
+<text style="font-family:var(--mono);font-size:9px;fill:#7C3AED" x="180" y="136" text-anchor="middle">ENI: 10.0.1.47 | SG: TCP 9092</text>
+
+<line x1="250" y1="82" x2="250" y2="95" stroke="#64748B" stroke-width="0.5" stroke-dasharray="3 3"/>
+<line x1="250" y1="95" x2="180" y2="103" stroke="#7C3AED" stroke-width="1" marker-end="url(#a2)"/>
+
+<text style="font-family:var(--mono);font-size:9px;fill:#64748B" x="350" y="60" text-anchor="start">Private DNS:</text>
+<text style="font-family:var(--mono);font-size:9px;fill:#64748B" x="350" y="72" text-anchor="start">pkc-prod01...confluent.cloud</text>
+<text style="font-family:var(--mono);font-size:9px;fill:#64748B" x="350" y="84" text-anchor="start">→ 10.0.1.47 (no internet)</text>
+
+<rect x="120" y="185" width="200" height="32" rx="6" fill="#F1F3F5" stroke="#CBD5E1" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:11px;font-weight:500;fill:#475569" x="220" y="205" text-anchor="middle">AWS PrivateLink backbone</text>
+<text style="font-family:var(--mono);font-size:9px;fill:#94A3B8" x="350" y="205" text-anchor="start">No internet hop, same AZ</text>
+
+<line x1="180" y1="145" x2="220" y2="183" stroke="#7C3AED" stroke-width="1" marker-end="url(#a2)"/>
+<line x1="220" y1="217" x2="220" y2="240" stroke="#854F0B" stroke-width="1" marker-end="url(#a2)"/>
+
+<rect x="30" y="245" width="400" height="140" rx="12" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5" stroke-dasharray="5 3"/>
+<text style="font-family:var(--font);font-size:11px;font-weight:600;fill:#633806" x="230" y="263">Confluent Cloud (Confluent-managed AWS account)</text>
+
+<rect x="50" y="278" width="160" height="36" rx="6" fill="#fff" stroke="#854F0B" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:11px;font-weight:500;fill:#854F0B" x="130" y="294" text-anchor="middle">NLB endpoint service</text>
+<text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="130" y="308" text-anchor="middle">vpce-svc-confluent</text>
+
+<rect x="50" y="330" width="80" height="36" rx="4" fill="#fff" stroke="#854F0B" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:10px;font-weight:500;fill:#854F0B" x="90" y="344" text-anchor="middle">Broker 1</text>
+<text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="90" y="358" text-anchor="middle">:9092</text>
+<rect x="145" y="330" width="80" height="36" rx="4" fill="#fff" stroke="#854F0B" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:10px;font-weight:500;fill:#854F0B" x="185" y="344" text-anchor="middle">Broker 2</text>
+<text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="185" y="358" text-anchor="middle">:9092</text>
+<rect x="240" y="330" width="80" height="36" rx="4" fill="#fff" stroke="#854F0B" stroke-width="0.5"/>
+<text style="font-family:var(--font);font-size:10px;font-weight:500;fill:#854F0B" x="280" y="344" text-anchor="middle">Broker 3</text>
+<text style="font-family:var(--mono);font-size:9px;fill:#854F0B" x="280" y="358" text-anchor="middle">:9092</text>
+
+<line x1="130" y1="314" x2="130" y2="328" stroke="#854F0B" stroke-width="0.5"/>
+
+<text style="font-family:var(--font);font-size:10px;font-weight:500;fill:#633806" x="350" y="290" text-anchor="start">Tenant: Acme Corp</text>
+<text style="font-family:var(--mono);font-size:9px;fill:#94A3B8" x="350" y="304" text-anchor="start">Dedicated cluster</text>
+<text style="font-family:var(--mono);font-size:9px;fill:#94A3B8" x="350" y="318" text-anchor="start">Network-isolated</text>
+<text style="font-family:var(--mono);font-size:9px;fill:#94A3B8" x="350" y="332" text-anchor="start">pkc-prod01</text>
+
+<text style="font-family:var(--font);font-size:10px;fill:#64748B" x="340" y="388" text-anchor="middle">Packet path: pod 10.0.1.12 → ENI 10.0.1.47 → PrivateLink → NLB → Broker :9092</text>
+</svg>
+</div>
+
+<div class="sl">Active private endpoints — all SaaS providers</div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+<label style="font-size:11px;color:var(--muted)">SaaS:</label>
+<select style="font-size:12px" onchange="topoSaas=this.value;render()"><option value="all" ${topoSaas==='all'?'selected':''}>All providers</option>${Object.entries(SAAS).map(([k,s])=>`<option value="${k}" ${topoSaas===k?'selected':''}>${s.name}</option>`).join('')}</select>
+<label style="font-size:11px;color:var(--muted)">CSP:</label>
+<select style="font-size:12px" onchange="topoFilter=this.value;render()"><option value="all">All</option><option value="aws" ${topoFilter==='aws'?'selected':''}>AWS</option><option value="azure" ${topoFilter==='azure'?'selected':''}>Azure</option><option value="gcp" ${topoFilter==='gcp'?'selected':''}>GCP</option></select>
+</div>
+${(()=>{const f=active.filter(c=>(topoSaas==='all'||c.saas===topoSaas)&&(topoFilter==='all'||c.csp===topoFilter));return `
+<div class="metrics">
+<div class="metric"><div class="label">Endpoints</div><div class="val">${f.length}</div><div class="sub">${[...new Set(f.map(c=>c.saas))].length} SaaS, ${[...new Set(f.map(c=>c.csp))].length} CSPs</div></div>
+<div class="metric"><div class="label">Services</div><div class="val">${[...new Set(f.map(c=>c.svc))].length}</div></div>
+<div class="metric"><div class="label">Egress</div><div class="val">${(f.reduce((s,c)=>s+c.egress,0)/1000).toFixed(1)} TB</div></div>
+<div class="metric"><div class="label">Ingress</div><div class="val">${(f.reduce((s,c)=>s+c.ingress,0)/1000).toFixed(1)} TB</div></div>
+</div>
+<table class="tbl">
+<tr><th>SaaS</th><th>Service</th><th>Env</th><th>CSP</th><th>Region</th><th>Conn type</th><th>Endpoint</th><th>Private IP</th><th>Remote cluster</th><th>BW</th><th>Egress</th><th>Ingress</th></tr>
+${f.map(c=>{const sp=SAAS[c.saas];const rc=sp?sp.regions.find(r=>r.csp===c.csp&&r.region===c.region):null;return `<tr>
+<td>${saasBadge(c.saas)}</td>
+<td style="font-weight:500">${c.svc}</td>
+<td><span class="badge-sm ${c.env==='prod'?'b-err':'b-ok'}">${c.env}</span></td>
+<td>${cspBadge(c.csp)}</td>
+<td style="font-size:11px">${c.region}</td>
+<td style="font-size:10px">${c.csp==='aws'?'PrivateLink':c.csp==='azure'?'Private Endpoint':'PSC'}</td>
+<td class="mono" style="font-size:10px">${c.ep}</td>
+<td class="mono" style="font-size:10px">${c.ip}</td>
+<td class="mono" style="font-size:10px">${rc?rc.cluster:'—'}</td>
+<td class="mono">${c.bw}</td>
+<td class="mono" style="font-size:10px">${c.egress}G</td>
+<td class="mono" style="font-size:10px">${c.ingress}G</td>
+</tr>`}).join('')}
+</table>`})()}
+`;
+}
+
+function renderBilling(){
+  const active=CONNECTIONS.filter(c=>c.cost>0);
+  const tot={eg:0,ig:0,cost:0};active.forEach(c=>{tot.eg+=c.egress;tot.ig+=c.ingress;tot.cost+=c.cost});
+  const teamCosts={};active.forEach(c=>{teamCosts[c.team]=(teamCosts[c.team]||0)+c.cost});
+  const cspCosts={};active.forEach(c=>{cspCosts[c.csp]=(cspCosts[c.csp]||0)+c.cost});
+  const saasCosts={};active.forEach(c=>{saasCosts[c.saas]=(saasCosts[c.saas]||0)+c.cost});
+  const maxTC=Math.max(...Object.values(teamCosts));
+  const maxSC=Math.max(...Object.values(saasCosts));
+  const cspColors={aws:'var(--aws)',azure:'var(--azure)',gcp:'var(--gcp)'};
+  const teamColors={Commerce:'var(--accent)',Data:'var(--green)','ML Platform':'var(--amber)',Platform:'var(--teal)'};
+  return `
+<div class="metrics">
+<div class="metric"><div class="label">Active connections</div><div class="val">${active.length}</div><div class="sub">${[...new Set(active.map(c=>c.saas))].length} SaaS providers</div></div>
+<div class="metric"><div class="label">Egress (period)</div><div class="val">${(tot.eg/1000).toFixed(1)} TB</div><div class="sub">@ $0.01/GB</div></div>
+<div class="metric"><div class="label">Ingress</div><div class="val">${(tot.ig/1000).toFixed(1)} TB</div><div class="sub">@ $0.005/GB</div></div>
+<div class="metric"><div class="label">Period cost</div><div class="val">$${tot.cost.toFixed(2)}</div><div class="sub">Mar 15 – Apr 6</div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+<div class="card"><h3>By team</h3>
+${Object.entries(teamCosts).sort((a,b)=>b[1]-a[1]).map(([t,c])=>`<div class="cb-row">
+<span style="font-weight:600;min-width:80px;font-size:12px">${t}</span>
+<div class="cb-bar-wrap"><div class="cb-bar" style="width:${(c/maxTC*100).toFixed(0)}%;background:${teamColors[t]||'var(--accent)'}"></div></div>
+<span class="mono" style="font-weight:600;min-width:70px;text-align:right;font-size:12px">$${c.toFixed(0)}</span>
+</div>`).join('')}
+</div>
+<div class="card"><h3>By SaaS provider</h3>
+${Object.entries(saasCosts).sort((a,b)=>b[1]-a[1]).map(([s,c])=>`<div class="cb-row">
+<span style="min-width:80px">${saasBadge(s)}</span>
+<div class="cb-bar-wrap"><div class="cb-bar" style="width:${(c/maxSC*100).toFixed(0)}%;background:${SAAS[s]?.color||'var(--accent)'}"></div></div>
+<span class="mono" style="font-weight:600;min-width:70px;text-align:right;font-size:12px">$${c.toFixed(0)}</span>
+</div>`).join('')}
+</div>
+<div class="card"><h3>By CSP</h3>
+${Object.entries(cspCosts).sort((a,b)=>b[1]-a[1]).map(([csp,c])=>`<div class="cb-row">
+<span style="min-width:70px">${cspBadge(csp)}</span>
+<div class="cb-bar-wrap"><div class="cb-bar" style="width:${(c/tot.cost*100).toFixed(0)}%;background:${cspColors[csp]}"></div></div>
+<span class="mono" style="font-weight:600;min-width:70px;text-align:right;font-size:12px">$${c.toFixed(0)}</span>
+</div>`).join('')}
+</div></div>
+
+<div class="sl">Itemized connection charges</div>
+<table class="tbl">
+<tr><th>SaaS</th><th>RITM</th><th>Service</th><th>Env</th><th>CSP / Region</th><th>Team / CC</th><th>Requester → Approver</th><th>Dur</th><th>Egress</th><th>Ingress</th><th>Charge</th></tr>
+${active.sort((a,b)=>b.cost-a.cost).map(c=>`<tr>
+<td>${saasBadge(c.saas)}</td>
+<td class="mono" style="font-size:10px">${c.ritm}</td>
+<td style="font-weight:500">${c.svc}</td>
+<td><span class="badge-sm ${c.env==='prod'?'b-err':'b-ok'}">${c.env}</span></td>
+<td>${cspBadge(c.csp)} ${c.region}</td>
+<td style="font-size:10px">${c.team} <span class="mono">${c.cc}</span></td>
+<td style="font-size:10px">${c.requester} → ${c.approver}</td>
+<td style="font-size:10px">${c.dur}</td>
+<td class="mono" style="font-size:10px">${c.egress}G</td>
+<td class="mono" style="font-size:10px">${c.ingress}G</td>
+<td class="mono" style="font-weight:600">$${c.cost.toFixed(2)}</td>
+</tr>`).join('')}
+<tr style="font-weight:700"><td colspan="10" style="text-align:right">Total</td><td class="mono">$${tot.cost.toFixed(2)}</td></tr>
+</table>`;
+}
+
+render();
+
+function renderLifecycle(){
+  const active=CONNECTIONS.filter(c=>c.status==='active');
+  const devConns=active.filter(c=>c.env==='dev'||c.env==='qa');
+  const perfConns=active.filter(c=>c.env==='perf'||c.env==='staging');
+  const prodConns=active.filter(c=>c.env==='prod');
+  const alwaysCost=active.length*9.36;
+  const smartCost=prodConns.length*9.36+perfConns.length*3.90+devConns.length*0.78;
+  return `
+<div class="sl">Endpoint lifecycle modes — pay per use</div>
+<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px">VPC endpoints cost $0.013/hr per AZ ($9.36/day for 2 AZs). Dev environments used 2 hours/day waste 92%. Serverless endpoints hibernate when idle, wake on DNS query — like Lambda for VPC endpoints.</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+<div class="card" style="border-top:3px solid var(--green)"><h3>Always on</h3><div style="font-size:22px;font-weight:600;margin:4px 0">$9.36/day</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Endpoint lives 24/7. Prod default. Zero cold start. Full cost regardless of traffic.</div></div>
+<div class="card" style="border-top:3px solid var(--amber)"><h3>Scheduled</h3><div style="font-size:22px;font-weight:600;margin:4px 0">$3.90/day</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Alive 8am-6pm Mon-Fri. Perf/staging default. Cron-based wake + hibernate. 58% savings.</div></div>
+<div class="card" style="border-top:3px solid var(--purple)"><h3>Serverless</h3><div style="font-size:22px;font-weight:600;margin:4px 0">$0.78/day</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Created on first connect (DNS query). Hibernate after 30m idle. Dev/QA default. 92% savings.</div></div>
+</div>
+
+<div class="sl">Serverless lifecycle — state machine</div>
+<div class="card">
+<div style="font-family:var(--mono);font-size:11px;line-height:1.7;white-space:pre;overflow-x:auto">
+            ┌──────────────────────────────────────────────────┐
+            │                                                  │
+            ▼                                                  │
+    HIBERNATING ── DNS query ──▶ WAKING ── EP ready ──▶ ACTIVE │
+    (no endpoint)    (30-90s)    (create VPC EP)    (traffic)   │
+                                                               │
+                                                 idle 30m ─────┘
+                                                    │
+                                                    ▼
+                                               DRAINING
+                                            (5m drain → delete EP)</div>
+</div>
+
+<div class="sl">Wake-on-connect — how it works</div>
+${flowStep(1,'var(--purple)','Service tries to connect','order-svc pod does DNS lookup for pkc-dev01.us-east-1.aws.confluent.cloud','Endpoint is hibernating — no VPC endpoint exists, no private IP assigned.')}
+${flowStep(2,'var(--purple)','Conduit DNS proxy intercepts','CoreDNS plugin (or Route53 Resolver rule) catches *.confluent.cloud queries. Detects connection is hibernating.','DNS is the wake signal. No sidecar proxy in the data path. Clean separation.')}
+${flowStep(3,'var(--amber)','DNS held, endpoint provisioned','DNS response delayed (not NXDOMAIN). Conduit creates VPC endpoint using cached Day 0 config. Confluent accepts. 30-90 seconds.','No re-approval needed. Original SNOW approval still valid. Same endpoint spec.')}
+${flowStep(4,'var(--green)','DNS resolves, Kafka connects','Private IP returned. Kafka client connects. Billing meter starts. Idle timer starts (30m).','Cold start: 30-90s. Acceptable for dev. Prod stays always-on — zero cold start.')}
+${flowStep(5,'var(--red)','No traffic 30m → hibernate','VPC flow logs show zero bytes. 5-min drain (finish in-flight). Delete VPC endpoint. State preserved. Billing stops.','API keys, Confluent attachment ID, Day 0 config all cached. Only the endpoint is destroyed.',true)}
+
+<div class="sl">Cost impact — your ${active.length} active connections</div>
+<div class="metrics">
+<div class="metric"><div class="label">All always-on</div><div class="val">$${alwaysCost.toFixed(0)}/day</div><div class="sub">${active.length} endpoints x $9.36</div></div>
+<div class="metric"><div class="label">Smart lifecycle</div><div class="val">$${smartCost.toFixed(0)}/day</div><div class="sub">${prodConns.length} always + ${perfConns.length} sched + ${devConns.length} serverless</div></div>
+<div class="metric"><div class="label">Daily savings</div><div class="val" style="color:var(--green)">$${(alwaysCost-smartCost).toFixed(0)}/day</div></div>
+<div class="metric"><div class="label">Monthly savings</div><div class="val" style="color:var(--green)">$${((alwaysCost-smartCost)*30).toFixed(0)}/mo</div><div class="sub">${Math.round((1-smartCost/alwaysCost)*100)}% reduction</div></div>
+</div>
+
+<table class="tbl">
+<tr><th>Connection</th><th>Service</th><th>Env</th><th>CSP</th><th>Current mode</th><th>Always-on cost</th><th>Smart cost</th><th>Savings</th></tr>
+${active.map(c=>{const mode=c.env==='prod'?'always_on':(c.env==='perf'||c.env==='staging')?'scheduled':'serverless';const ao=9.36;const sm=mode==='always_on'?9.36:mode==='scheduled'?3.90:0.78;return `<tr>
+<td class="mono" style="font-size:10px">${c.id}</td>
+<td style="font-weight:500">${c.svc}</td>
+<td><span class="badge-sm ${c.env==='prod'?'b-err':c.env==='perf'?'b-warn':'b-ok'}">${c.env}</span></td>
+<td>${cspBadge(c.csp)}</td>
+<td><span class="badge-sm ${mode==='always_on'?'b-err':mode==='scheduled'?'b-warn':'b-purple'}">${mode.replace('_',' ')}</span></td>
+<td class="mono">$${ao.toFixed(2)}/d</td>
+<td class="mono">$${sm.toFixed(2)}/d</td>
+<td class="mono" style="color:var(--green)">${ao>sm?'-'+Math.round((1-sm/ao)*100)+'%':'—'}</td>
+</tr>`}).join('')}
+</table>
+
+<div class="sl">Revocation governance</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+<div class="card" style="border-top:3px solid var(--green)"><h3>Dev / QA delete</h3><div style="font-size:12px;color:var(--muted);line-height:1.6">Self-serve. SSO only. Creator or team admin. Immediate teardown.</div></div>
+<div class="card" style="border-top:3px solid var(--amber)"><h3>Perf delete</h3><div style="font-size:12px;color:var(--muted);line-height:1.6">Step-up auth (MFA re-challenge). No SNOW ticket. Prevents fat-finger.</div></div>
+<div class="card" style="border-top:3px solid var(--red)"><h3>Prod delete</h3><div style="font-size:12px;color:var(--muted);line-height:1.6">SNOW change request (CHG) + MFA + 30-min grace period. Cancel URL pushed to Slack. Admin-only.</div></div>
+</div>
+
+<div class="card" style="margin-top:10px;border-left:3px solid var(--red);border-radius:0 10px 10px 0">
+<h3>Emergency revoke (break-glass)</h3>
+<div style="font-size:12px;color:var(--muted);line-height:1.6">Security incidents only. Requires <code>conduit-admin</code> role + MFA + mandatory reason field. Immediate teardown, no grace period. SNOW incident auto-created post-facto for audit trail.</div>
+<div class="code" style="font-size:10px">DELETE /api/v1/admin/connections/CONN-001?emergency=true
+X-Step-Up: $MFA_TOKEN
+X-Reason: "Security incident — credential compromise"</div>
+</div>
+
+<div class="sl">Configuration</div>
+<div class="code"><span class="cc"># conduit.yaml — lifecycle modes</span>
+<span class="ck">lifecycle</span>:
+  <span class="ck">defaults</span>:
+    prod: <span class="cs">always_on</span>
+    perf: <span class="cs">scheduled</span>
+    staging: <span class="cs">scheduled</span>
+    qa: <span class="cs">serverless</span>
+    dev: <span class="cs">serverless</span>
+  <span class="ck">serverless</span>:
+    wake_on: <span class="cs">dns_query</span>
+    idle_timeout_min: <span class="cn">30</span>
+    drain_period_min: <span class="cn">5</span>
+    cold_start_budget_sec: <span class="cn">90</span>
+  <span class="ck">scheduled</span>:
+    wake_cron: <span class="cs">"0 8 * * 1-5"</span>     <span class="cc"># Mon-Fri 8am</span>
+    hibernate_cron: <span class="cs">"0 18 * * 1-5"</span> <span class="cc"># Mon-Fri 6pm</span>
+  <span class="ck">dns_proxy</span>:
+    type: <span class="cs">coredns_plugin</span>
+    intercept: [<span class="cs">"*.confluent.cloud"</span>, <span class="cs">"*.snowflakecomputing.com"</span>]
+    hold_timeout_sec: <span class="cn">90</span>
+  <span class="ck">revocation</span>:
+    dev: { action: <span class="cs">immediate</span>, auth: <span class="cs">sso_only</span> }
+    perf: { action: <span class="cs">immediate</span>, auth: <span class="cs">mfa_step_up</span> }
+    prod: { action: <span class="cs">snow_change_request</span>, auth: <span class="cs">mfa_step_up</span>, grace_min: <span class="cn">30</span> }
+    emergency: { requires: [<span class="cs">conduit_admin</span>, <span class="cs">mfa</span>, <span class="cs">reason</span>] }</div>
+`;
+}
+
+function renderRoadmap(){
+  const phases=[
+    {ver:'v1.0',name:'MVP — orchestrator core',color:'var(--accent)',status:'Building',items:[
+      {feat:'Three-plane resolution engine',desc:'SSO identity + service registry + Day 0 config → fully resolved provisioning context',done:true},
+      {feat:'POST /connections (3 fields)',desc:'Developer sends service + environment + bandwidth. System resolves everything else.',done:true},
+      {feat:'ServiceNow RITM integration',desc:'Auto-create RITM with CMDB CI reference, webhook callback, auto-close on provision.',done:true},
+      {feat:'Token-gated provisioning',desc:'Short-lived JWT approval tokens scoped to specific VPC/subnets. Assumes team IAM role.',done:true},
+      {feat:'AWS PrivateLink provisioner',desc:'create-vpc-endpoint, accept attachment, tag with audit chain.',done:true},
+      {feat:'Always-on endpoints',desc:'24/7 endpoints for all environments. No lifecycle management yet.',done:true},
+      {feat:'Basic billing & metering',desc:'Per-connection egress/ingress tracking, team/cost center attribution.',done:true},
+      {feat:'Delete governance',desc:'SSO for dev, MFA step-up for perf, SNOW CHG + 30m grace for prod.',done:true},
+      {feat:'Pre-flight validation cron',desc:'Nightly re-check of IAM roles, SGs, DNS, quotas. Auto-create SNOW incidents on drift.',done:true},
+    ]},
+    {ver:'v1.1',name:'Multi-cloud',color:'var(--teal)',status:'Next',items:[
+      {feat:'Azure Private Endpoint provisioner',desc:'ARM API integration, managed identity auth, NSG validation.',done:false},
+      {feat:'GCP PSC provisioner',desc:'Forwarding rules, service attachments, GCP IAM binding.',done:false},
+      {feat:'Multi-region parallel provisioning',desc:'Single approval → provision endpoints in all resolved locations concurrently.',done:false},
+    ]},
+    {ver:'v1.5',name:'Developer experience',color:'var(--green)',status:'Planned',items:[
+      {feat:'/env?format= endpoint',desc:'dotenv, k8s-configmap, k8s-secret, docker formats. Pipe to .env or kubectl apply.',done:false},
+      {feat:'CLI (conduit connect)',desc:'conduit connect order-svc --env prod --bw 500. Terminal equivalent of 3-field API.',done:false},
+      {feat:'Webhook callbacks',desc:'POST to developer URL on ACTIVE instead of polling. Async-first.',done:false},
+      {feat:'Backstage plugin',desc:'Conduit tab in Backstage service page. Request connection without leaving catalog.',done:false},
+    ]},
+    {ver:'v2.0',name:'Lifecycle add-on (paid tier)',color:'var(--purple)',status:'Planned',items:[
+      {feat:'Scheduled endpoints',desc:'Cron-based wake/hibernate. Business hours only. 58% cost savings.',done:false},
+      {feat:'Serverless endpoints (wake-on-DNS)',desc:'CoreDNS plugin intercepts DNS queries. Provision on first connect, hibernate on idle.',done:false},
+      {feat:'Idle detection',desc:'VPC flow logs / ENI metrics → zero-byte detection → drain + hibernate.',done:false},
+      {feat:'Cost optimization dashboard',desc:'Always-on vs smart lifecycle comparison. Projected savings per team.',done:false},
+      {feat:'Route53 Resolver rule integration',desc:'Alternative to CoreDNS for non-K8s environments.',done:false},
+    ]},
+    {ver:'v2.5',name:'Multi-provider',color:'var(--amber)',status:'Future',items:[
+      {feat:'Snowflake acceptor',desc:'SYSTEM$AUTHORIZE_PRIVATELINK / system function integration.',done:false},
+      {feat:'Databricks acceptor',desc:'Databricks account API for private connectivity.',done:false},
+      {feat:'MongoDB Atlas acceptor',desc:'Atlas Admin API for private endpoint services.',done:false},
+      {feat:'Redis Cloud acceptor',desc:'Redis Cloud VPC peering / PrivateLink API.',done:false},
+    ]},
+    {ver:'v3.0',name:'Enterprise',color:'var(--red)',status:'Future',items:[
+      {feat:'Jira Service Management plugin',desc:'Alternative to SNOW for approval workflows.',done:false},
+      {feat:'PagerDuty approval plugin',desc:'On-call-aware approval routing.',done:false},
+      {feat:'Terraform provider',desc:'resource "conduit_connection" — declare connections as IaC.',done:false},
+      {feat:'GitOps mode',desc:'Connections declared in YAML, reconciled by K8s controller. ArgoCD-native.',done:false},
+      {feat:'Audit export',desc:'SIEM integration for connection lifecycle events. OCSF format.',done:false},
+    ]},
+  ];
+  const totalFeats=phases.reduce((s,p)=>s+p.items.length,0);
+  const doneFeats=phases.reduce((s,p)=>s+p.items.filter(i=>i.done).length,0);
+  return `
+<div class="sl">Product roadmap — MVP to enterprise</div>
+<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px">Serverless endpoints (wake-on-DNS) is the v2.0 paid add-on — not the MVP. The MVP is the orchestrator core: three-plane resolution, SNOW integration, and always-on AWS PrivateLink provisioning. Multi-cloud and lifecycle come later.</p>
+
+<div class="metrics">
+<div class="metric"><div class="label">Total features</div><div class="val">${totalFeats}</div></div>
+<div class="metric"><div class="label">MVP (v1.0)</div><div class="val">${phases[0].items.length}</div><div class="sub" style="color:var(--green)">Prototyped</div></div>
+<div class="metric"><div class="label">Releases planned</div><div class="val">${phases.length}</div></div>
+<div class="metric"><div class="label">Lifecycle add-on</div><div class="val">v2.0</div><div class="sub">Paid tier</div></div>
+</div>
+
+${phases.map(p=>`
+<div class="card" style="border-left:3px solid ${p.color};border-radius:0 10px 10px 0">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<div><span style="font-size:16px;font-weight:600">${p.ver}</span> <span style="font-size:14px;color:var(--muted)">— ${p.name}</span></div>
+<span class="badge-sm" style="background:${p.color}18;color:${p.color}">${p.status}</span>
+</div>
+${p.items.map(i=>`<div style="display:flex;gap:8px;padding:4px 0;font-size:12px;line-height:1.5;border-bottom:1px solid var(--surface2)">
+<span style="flex-shrink:0;width:18px;height:18px;border-radius:4px;border:1px solid ${i.done?'var(--green)':'var(--border)'};background:${i.done?'var(--green-light)':'var(--surface)'};display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--green)">${i.done?'&#10003;':''}</span>
+<div><span style="font-weight:500">${i.feat}</span><br><span style="color:var(--muted);font-size:11px">${i.desc}</span></div>
+</div>`).join('')}
+</div>`).join('')}
+
+<div class="sl">Monetization model</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+<div class="card" style="border-top:3px solid var(--green)">
+<h3>Community (free)</h3>
+<div style="font-size:12px;color:var(--muted);line-height:1.6">
+Three-plane resolution<br>Always-on endpoints<br>Single CSP (AWS)<br>Basic billing<br>SNOW integration<br>CLI + API
+</div></div>
+<div class="card" style="border-top:3px solid var(--accent)">
+<h3>Pro</h3>
+<div style="font-size:12px;color:var(--muted);line-height:1.6">
+Everything in Community<br>Multi-cloud (Azure + GCP)<br>Multi-region provisioning<br><strong style="color:var(--dark)">Scheduled endpoints</strong><br>Advanced billing + chargeback<br>Backstage plugin
+</div></div>
+<div class="card" style="border-top:3px solid var(--purple)">
+<h3>Enterprise</h3>
+<div style="font-size:12px;color:var(--muted);line-height:1.6">
+Everything in Pro<br><strong style="color:var(--dark)">Serverless endpoints (DNS wake)</strong><br>Cost optimization dashboard<br>Multi-provider (Snowflake, etc.)<br>Terraform provider + GitOps<br>SIEM audit export
+</div></div>
+</div>
+`;
+}
+
+function renderChecklist(){
+  const chk=(done,text)=>`<div style="display:flex;gap:8px;padding:5px 0;font-size:12px;line-height:1.5"><span style="flex-shrink:0;width:18px;height:18px;border-radius:4px;border:1px solid ${done?'var(--green)':'var(--border)'};background:${done?'var(--green-light)':'var(--surface)'};display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--green)">${done?'&#10003;':''}</span><span style="color:${done?'var(--dark)':'var(--muted)'}">${text}</span></div>`;
+  const section=(title,color,owner,items)=>`<div class="card" style="border-left:3px solid ${color};border-radius:0 10px 10px 0">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h3 style="margin:0">${title}</h3><span class="badge-sm" style="background:${color}15;color:${color}">${owner}</span></div>
+${items.map(i=>chk(i[0],i[1])).join('')}</div>`;
+  const done=34,total=42;
+  return `
+<div class="sl">Day 0 prerequisites \u2014 everything needed before a developer can call the API</div>
+<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px">~42 setup items across 8 systems. Each checkbox is a discrete config that blocks self-serve if missing. Grouped by responsible team. Unchecked items are optional enhancements.</p>
+<div class="metrics">
+<div class="metric"><div class="label">Total items</div><div class="val">${total}</div></div>
+<div class="metric"><div class="label">Required (checked)</div><div class="val">${done}</div><div class="sub" style="color:var(--green)">${Math.round(done/total*100)}% complete</div></div>
+<div class="metric"><div class="label">Systems involved</div><div class="val">8</div></div>
+<div class="metric"><div class="label">Est. setup time</div><div class="val">2\u20134 wk</div><div class="sub">First tenant; &lt;1d incremental</div></div>
+</div>
+
+${section('Confluent Cloud (SaaS provider)','#854F0B','Confluent ops',[
+[true,'Kafka clusters deployed in target regions (AWS us-east-1, GCP europe-west1, Azure eastus, westeurope)'],
+[true,'Private Link endpoint service per region (vpce-svc-confluent-kafka) \u2014 what client endpoints connect TO'],
+[true,'Private Service Connect service attachment for GCP regions'],
+[true,'Azure Private Link service for Azure regions'],
+[true,'Confluent Cloud API credentials issued to NaaS orchestrator (service account, NetworkingAdmin role)'],
+[true,'Tenant isolation model decided \u2014 dedicated cluster per customer vs shared multi-tenant'],
+[true,'Schema Registry deployed per environment'],
+])}
+
+${section('Client IdP / SSO (identity plane)','#0F766E','Security / IT',[
+[true,'SSO groups created per team: eng-commerce, eng-data, eng-ml, eng-platform'],
+[true,'Group \u2192 team \u2192 cost center mapping defined (eng-commerce \u2192 Commerce, CC-3100)'],
+[true,'Approver list per team configured (Commerce \u2192 james.liu@acme.com)'],
+[true,'SCIM sync enabled from IdP \u2192 NaaS (group membership changes propagate)'],
+[true,'OAuth app registered for NaaS JWT validation (issuer, audience, JWKS endpoint)'],
+[false,'Cross-team topic access groups defined (for cross-team approval routing)'],
+])}
+
+${section('Client cloud accounts (infrastructure plane)','#EA580C','Platform engineering',[
+[true,'AWS/Azure/GCP accounts provisioned per team'],
+[true,'VPCs/VNets created with CIDR ranges \u2014 no overlap with Confluent CIDRs'],
+[true,'Subnets created in target AZs (min 2 AZs for prod HA)'],
+[true,'IAM role NaaSProvisioner created with scoped permissions (CreateVpcEndpoint, DescribeVpcEndpoints, DeleteVpcEndpoints, DescribeSubnets, DescribeSecurityGroups)'],
+[true,'IAM trust policy allows NaaS orchestrator to AssumeRole'],
+[true,'Azure: Contributor role scoped to resource group'],
+[true,'GCP: compute.forwardingRules.create, servicenetworking permissions granted'],
+[true,'Security groups allowing TCP 9092 from VPC CIDR'],
+[true,'Private DNS hosted zone for *.region.csp.confluent.cloud'],
+[true,'VPC endpoint quota verified (AWS default 50 per VPC)'],
+[false,'DNS conditional forwarding for custom resolvers (Active Directory DNS)'],
+[false,'Split-horizon DNS if services need both private and public resolution'],
+])}
+
+${section('Service registry (location plane)','#1E40AF','Platform engineering',[
+[true,'Backstage / ArgoCD deployed and populated with service catalog'],
+[true,'Service \u2192 cluster \u2192 CSP \u2192 region mappings for all services'],
+[true,'Cluster naming convention: eks-prod-use1, aks-perf-eus, gke-qa-usc1'],
+[true,'Webhook from ArgoCD \u2192 NaaS for auto-registration of new deployments'],
+[false,'Multi-region service detection flag for multi-endpoint provisioning'],
+])}
+
+${section('ServiceNow (approval plane)','#993C1D','IT service management',[
+[true,'NaaS catalog item: "NaaS Private Network Connection" with custom variables'],
+[true,'Assignment groups per team: "NaaS Approvers \u2014 Commerce" etc.'],
+[true,'CMDB CI class: cmdb_ci_cloud_network with CSP, account, VPC, region, env, team fields'],
+[true,'CMDB CIs synced from Day 0 config registry'],
+[true,'Business Rule webhook: RITM state change \u2192 POST to NaaS callback'],
+[false,'SLA defined for approval response time (e.g., 4hr for prod)'],
+[false,'Auto-escalation: no approval within SLA \u2192 escalate to VP'],
+])}
+
+${section('NaaS platform (orchestrator)','#7C3AED','Platform engineering',[
+[true,'API gateway (Kong/Envoy) with TLS, rate limiting, JWT validation'],
+[true,'NaaS controller with connectivity to all planes + CSP APIs + Confluent API'],
+[true,'Day 0 config registry database'],
+[true,'Policy engine rules (auto vs SNOW thresholds)'],
+[true,'Approval token signing key (RSA-256, 15-min TTL)'],
+[true,'Pre-flight validation cron (nightly IAM/SG/DNS/quota re-check)'],
+[true,'CMDB sync job (push Day 0 configs to SNOW)'],
+[false,'Circuit breaker / retry for CSP API failures (30\u201390s endpoint creation)'],
+[false,'Terraform state backend if using IaC instead of direct API calls'],
+])}
+
+${section('Billing / FinOps','#D97706','Finance / Platform',[
+[true,'Cost center mapping per team in NaaS config'],
+[true,'Metering pipeline: per-connection egress/ingress tracking'],
+[true,'Chargeback report template (team, CSP, requester, approver, duration, data)'],
+[false,'Budget alerts per team/cost center (alert at 80% threshold)'],
+[false,'Showback dashboard for engineering managers'],
+[false,'PrivateLink hourly cost ($0.013/hr per AZ) included in projections'],
+])}
+
+<div class="sl">What happens when items are missing</div>
+<div class="alert alert-err"><strong>SSO group not registered</strong> \u2192 403: NaaS cannot resolve team. "SSO group eng-risk has no registered cloud config."</div>
+<div class="alert alert-err"><strong>No Day 0 config for env+CSP</strong> \u2192 422: service registry resolves cluster but no VPC/IAM registered. "No config for Commerce/prod/azure/eastus."</div>
+<div class="alert alert-err"><strong>IAM role deleted</strong> \u2192 502: approval succeeds but provisioning fails. Pre-flight cron catches overnight.</div>
+<div class="alert alert-err"><strong>SG modified</strong> \u2192 endpoint created but Kafka unreachable. Producer throws timeout. Pre-flight detects missing 9092 rule.</div>
+<div class="alert alert-warn"><strong>Service not in registry</strong> \u2192 404: ArgoCD hasn\u2019t synced yet. Common for new service first deploy.</div>
+<div class="alert alert-info"><strong>Pre-flight cron catches drift</strong> \u2192 nightly validation re-checks all configs. Degraded configs auto-create SNOW incidents with remediation.</div>
+`;}
+
+</script>
+</body>
+</html>

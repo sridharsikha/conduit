@@ -1,0 +1,76 @@
+services:
+  order-svc:
+    team: Commerce
+    deployments:
+      - { env: prod, csp: aws, region: us-east-1, cluster: pkc-prod01, saas: confluent }
+      - { env: prod, csp: gcp, region: europe-west1, cluster: pkc-gcpeu01, saas: confluent }
+      - { env: dev, csp: aws, region: us-east-1, cluster: pkc-dev01, saas: confluent }
+  data-export:
+    team: Data
+    deployments:
+      - { env: prod, csp: aws, region: us-east-1, cluster: acme.us-east-1, saas: snowflake }
+      - { env: dev, csp: aws, region: us-east-1, cluster: acme-dev.us-east-1, saas: snowflake }
+  ml-pipeline:
+    team: ML Platform
+    deployments:
+      - { env: prod, csp: azure, region: eastus, cluster: dbc-prod-eus, saas: databricks }
+
+teams:
+  Commerce:
+    sso_group: eng-commerce
+    cost_center: CC-3100
+    approvers: [james.liu@acme.com]
+    accounts:
+      - { env: prod, csp: aws, region: us-east-1, account_id: "111222333444", vpc_id: vpc-comm-prod, iam_role: "arn:aws:iam::111222333444:role/conduit-commerce", security_group: sg-kafka-9092 }
+      - { env: prod, csp: gcp, region: europe-west1, account_id: acme-prod, vpc_id: vpc-comm-gcp, iam_role: sa-conduit@acme.iam, security_group: allow-kafka }
+      - { env: dev, csp: aws, region: us-east-1, account_id: "111222333444", vpc_id: vpc-comm-dev, iam_role: "arn:aws:iam::111222333444:role/conduit-dev", security_group: sg-dev }
+  Data:
+    sso_group: eng-data
+    cost_center: CC-4200
+    approvers: [james.liu@acme.com]
+    accounts:
+      - { env: prod, csp: aws, region: us-east-1, account_id: "555666777888", vpc_id: vpc-data-prod, iam_role: "arn:aws:iam::555666777888:role/conduit-data", security_group: sg-snow-443 }
+      - { env: dev, csp: aws, region: us-east-1, account_id: "555666777888", vpc_id: vpc-data-dev, iam_role: "arn:aws:iam::555666777888:role/conduit-dev", security_group: sg-dev }
+  ML Platform:
+    sso_group: eng-ml
+    cost_center: CC-4500
+    approvers: [david.kim@acme.com]
+    accounts:
+      - { env: prod, csp: azure, region: eastus, account_id: sub-ml-prod, vpc_id: vnet-ml-eus, iam_role: sp-conduit-ml, security_group: nsg-databricks }
+
+saas_providers:
+  confluent:
+    name: Confluent Cloud
+    type: Kafka streaming
+    api_url: https://api.confluent.cloud
+    regions:
+      - { csp: aws, region: us-east-1, cluster: pkc-prod01, endpoint_service: "com.amazonaws.vpce.us-east-1.vpce-svc-confluent01" }
+      - { csp: gcp, region: europe-west1, cluster: pkc-gcpeu01 }
+  snowflake:
+    name: Snowflake
+    type: Data warehouse
+    regions:
+      - { csp: aws, region: us-east-1, cluster: acme.us-east-1 }
+  databricks:
+    name: Databricks
+    type: Lakehouse / ML
+    regions:
+      - { csp: azure, region: eastus, cluster: dbc-prod-eus }
+
+provisioner_backend: aws_sdk
+lifecycle_defaults:
+  prod: always_on
+  perf: scheduled
+  dev: serverless
+
+# --- Authentication ---
+auth:
+  provider: oidc
+  issuer: https://acme.okta.com
+  client_id: conduit-prod
+  audience: conduit-api
+  admin_group: conduit-admin
+  jwks_cache_ttl_sec: 3600
+  bootstrap_admins:
+    - admin@example.com
+    - 
