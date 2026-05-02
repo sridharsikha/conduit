@@ -633,6 +633,125 @@ ${accGroup('topology-access', [
 
 function renderPatterns(){
   return `
+<div class="sl">The pattern has a forty-year history</div>
+<div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:0">The publish-subscribe message bus is not a 2010s cloud-native invention. It started at <strong style="color:var(--dark)">Teknekron in 1985</strong> as TIB \u2014 The Information Bus \u2014 to wire trading floors at Goldman Sachs and Fidelity. The pattern has fragmented into three modern descendants, each optimized for a different constraint profile, plus the modern policy-decision-point applications (ISE, Conduit, Ruckus R1) that build on top of them.</p></div>
+
+<div class="sl">Family tree of the Information Bus</div>
+<div class="card" style="padding:8px;overflow-x:auto">
+<svg width="100%" viewBox="0 0 720 400" style="display:block">
+<defs><marker id="arft" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="270" y="20" width="180" height="58" rx="8" fill="#FEF3C7" stroke="#92400E" stroke-width="1"/>
+<text x="360" y="40" text-anchor="middle" style="font-family:var(--font);font-size:13px;font-weight:700;fill:#7C2D12">Teknekron TIB</text>
+<text x="360" y="56" text-anchor="middle" style="font-family:var(--font);font-size:11px;fill:#92400E">1985 \u00b7 Wall Street trading floors</text>
+<text x="360" y="70" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#B45309">subject-based pub/sub \u00b7 fire-and-forget</text>
+<line x1="320" y1="80" x2="180" y2="130" stroke="#92400E" stroke-width="1" marker-end="url(#arft)"/>
+<line x1="360" y1="80" x2="360" y2="130" stroke="#92400E" stroke-width="1" marker-end="url(#arft)"/>
+<line x1="400" y1="80" x2="540" y2="130" stroke="#92400E" stroke-width="1" marker-end="url(#arft)"/>
+<rect x="80" y="135" width="200" height="80" rx="8" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/>
+<text x="180" y="155" text-anchor="middle" style="font-family:var(--font);font-size:12px;font-weight:700;fill:#0F766E">MQTT</text>
+<text x="180" y="170" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#0F766E">1999 \u00b7 IBM \u00b7 SCADA over satellite</text>
+<text x="180" y="185" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#0F766E">edge / IoT \u00b7 lightweight broker</text>
+<text x="180" y="199" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#0F766E">QoS 0/1/2 \u00b7 retained messages</text>
+<text x="180" y="210" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">Mosquitto \u00b7 EMQX \u00b7 HiveMQ</text>
+<rect x="290" y="135" width="160" height="80" rx="8" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/>
+<text x="370" y="155" text-anchor="middle" style="font-family:var(--font);font-size:12px;font-weight:700;fill:#0F766E">NATS</text>
+<text x="370" y="170" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#0F766E">2010 \u00b7 Derek Collison (ex-TIBCO)</text>
+<text x="370" y="185" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#0F766E">cloud-native lightweight</text>
+<text x="370" y="199" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#0F766E">pub-sub + request-reply + leaf nodes</text>
+<text x="370" y="210" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">+ JetStream (2020) for durability</text>
+<rect x="460" y="135" width="200" height="80" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="560" y="155" text-anchor="middle" style="font-family:var(--font);font-size:12px;font-weight:700;fill:#3C3489">JMS \u2192 Kafka</text>
+<text x="560" y="170" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#534AB7">1998 / 2011 \u00b7 LinkedIn (Kafka)</text>
+<text x="560" y="185" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#534AB7">enterprise heavyweight</text>
+<text x="560" y="199" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#534AB7">log-as-primitive \u00b7 partitioned</text>
+<text x="560" y="210" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">Confluent \u00b7 RedPanda \u00b7 WarpStream</text>
+<text x="180" y="240" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#0F766E">Optimized for: edge devices</text>
+<text x="180" y="252" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">low bandwidth \u00b7 intermittent \u00b7 \u003c1KB msgs</text>
+<text x="370" y="240" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#0F766E">Optimized for: cloud microservices</text>
+<text x="370" y="252" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">command-control \u00b7 sub-ms \u00b7 leaf-node federation</text>
+<text x="560" y="240" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#3C3489">Optimized for: durable streams</text>
+<text x="560" y="252" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">days-weeks retention \u00b7 replay \u00b7 analytical hand-off</text>
+<line x1="180" y1="262" x2="180" y2="298" stroke="#0F766E" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arft)"/>
+<line x1="370" y1="262" x2="370" y2="298" stroke="#0F766E" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arft)"/>
+<line x1="560" y1="262" x2="560" y2="298" stroke="#534AB7" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arft)"/>
+<rect x="40" y="305" width="280" height="80" rx="8" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="180" y="324" text-anchor="middle" style="font-family:var(--font);font-size:12px;font-weight:700;fill:#0F766E">Ruckus R1 PubSub (your deck)</text>
+<text x="180" y="340" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#0F766E">edge plane: <tspan font-weight="600">MQTT 5</tspan> on RUCKUS Edge</text>
+<text x="180" y="354" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#0F766E">cloud plane: <tspan font-weight="600">NATS JetStream</tspan> in R1</text>
+<text x="180" y="368" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#0F766E">bridge: NATS leaf node + MQTT-NATS adapter</text>
+<text x="180" y="380" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">two TIB descendants combined intentionally</text>
+<rect x="400" y="305" width="280" height="80" rx="8" fill="#fff" stroke="#534AB7" stroke-width="0.5"/>
+<text x="540" y="324" text-anchor="middle" style="font-family:var(--font);font-size:12px;font-weight:700;fill:#3C3489">Conduit (this portal)</text>
+<text x="540" y="340" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#534AB7">single plane: <tspan font-weight="600">Confluent / Kafka</tspan> in cloud</text>
+<text x="540" y="354" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#534AB7">topics: conduit.connections.* \u00b7 preflight.* \u00b7 lifecycle.*</text>
+<text x="540" y="368" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#534AB7">subscribers: billing \u00b7 CMDB \u00b7 SIEM \u00b7 customer pipelines</text>
+<text x="540" y="380" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">log-as-primitive for replay + audit warehouse</text>
+</svg>
+<p style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.7"><strong style="color:var(--dark)">The honest framing:</strong> the family fragmented because no single design fits all the constraint profiles. The Ruckus architecture uses two of the three branches (MQTT at edge, NATS in cloud) precisely because edge and cloud have different constraints. Conduit uses the third (Kafka) because the workload is durable streams with analytical hand-off. There is no winner \u2014 the integration story between branches is where modern platform work actually happens.</p>
+</div>
+
+<div class="sl">NATS in detail \u2014 because Ruckus depends on it</div>
+<div class="card" style="padding:8px;overflow-x:auto">
+<svg width="100%" viewBox="0 0 720 380" style="display:block">
+<defs><marker id="arnats" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="180" y="20" width="360" height="100" rx="10" fill="#EFF6FF" stroke="#1E40AF" stroke-width="1"/>
+<text x="360" y="40" text-anchor="middle" style="font-family:var(--font);font-size:13px;font-weight:700;fill:#1E3A8A">NATS cluster (cloud)</text>
+<text x="360" y="56" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#1E40AF">3+ servers \u00b7 full mesh \u00b7 raft consensus for JetStream</text>
+<rect x="200" y="68" width="100" height="44" rx="6" fill="#fff" stroke="#1E40AF" stroke-width="0.5"/>
+<text x="250" y="86" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#1E3A8A">nats-1</text>
+<text x="250" y="100" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#1E40AF">us-east-1</text>
+<rect x="310" y="68" width="100" height="44" rx="6" fill="#fff" stroke="#1E40AF" stroke-width="0.5"/>
+<text x="360" y="86" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#1E3A8A">nats-2</text>
+<text x="360" y="100" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#1E40AF">us-east-1</text>
+<rect x="420" y="68" width="100" height="44" rx="6" fill="#fff" stroke="#1E40AF" stroke-width="0.5"/>
+<text x="470" y="86" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#1E3A8A">nats-3</text>
+<text x="470" y="100" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#1E40AF">us-east-1</text>
+<text x="360" y="138" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#1E40AF">Subject namespace (hierarchical \u00b7 wildcards)</text>
+<rect x="180" y="148" width="360" height="38" rx="6" fill="#EFF6FF" stroke="#1E40AF" stroke-width="0.5"/>
+<text x="360" y="164" text-anchor="middle" class="mono" style="font-family:var(--mono);font-size:10px;fill:#1E3A8A">mdu.property.{prop}.lock.{unit}.{event}</text>
+<text x="360" y="178" text-anchor="middle" class="mono" style="font-family:var(--mono);font-size:10px;fill:#1E40AF">subscribe mdu.property.austin-tx-001.lock.> for one property</text>
+<line x1="80" y1="220" x2="180" y2="180" stroke="#0F766E" stroke-width="1.5" marker-end="url(#arnats)"/>
+<line x1="640" y1="220" x2="540" y2="180" stroke="#1E40AF" stroke-width="1.5" marker-end="url(#arnats)"/>
+<rect x="20" y="220" width="220" height="140" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1"/>
+<text x="130" y="240" text-anchor="middle" style="font-family:var(--font);font-size:13px;font-weight:700;fill:#0F766E">NATS leaf node (edge)</text>
+<text x="130" y="256" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#0F766E">RUCKUS Edge appliance \u00b7 on-prem</text>
+<rect x="35" y="270" width="190" height="80" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="130" y="286" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#0F766E">leaf server</text>
+<text x="130" y="300" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#0F766E">15 MB Go binary \u00b7 no deps</text>
+<text x="130" y="314" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#0F766E">single TCP \u2192 cloud cluster</text>
+<text x="130" y="328" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#0F766E">survives WAN drop \u00b7 buffers</text>
+<text x="130" y="342" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#0F766E">subject filter: mdu.property.{this-prop}.\u003e</text>
+<rect x="480" y="220" width="220" height="140" rx="10" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1"/>
+<text x="590" y="240" text-anchor="middle" style="font-family:var(--font);font-size:13px;font-weight:700;fill:#5B21B6">JetStream (durability layer)</text>
+<text x="590" y="256" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#7C3AED">added 2020 \u00b7 sits on top of core NATS</text>
+<rect x="495" y="270" width="190" height="80" rx="6" fill="#fff" stroke="#7C3AED" stroke-width="0.5"/>
+<text x="590" y="288" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#5B21B6">durable streams \u00b7 replay</text>
+<text x="590" y="302" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#7C3AED">key-value store</text>
+<text x="590" y="316" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#7C3AED">object store</text>
+<text x="590" y="330" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#7C3AED">exactly-once semantics</text>
+<text x="590" y="344" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">Kafka-equivalent capability</text>
+<text x="130" y="375" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">edge devices connect locally; bridge filters subjects upward</text>
+<text x="590" y="375" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">topics with retention; replay; KV configs</text>
+</svg>
+</div>
+
+<div class="sl">NATS vs Kafka \u2014 honest comparison</div>
+<table class="tbl">
+<tr><th>Workload</th><th>Kafka wins</th><th>NATS wins</th><th>Why</th></tr>
+<tr><td>Durable event log, weeks of retention</td><td><span class="badge-sm b-ok">yes</span></td><td>(JetStream, OK)</td><td>Kafka built around log primitive; NATS retrofitted with JetStream</td></tr>
+<tr><td>Stream processing (Flink, ksqlDB, Tableflow)</td><td><span class="badge-sm b-ok">yes</span></td><td>(limited)</td><td>Kafka ecosystem is huge; NATS has minimal processing tooling</td></tr>
+<tr><td>Schema governance / data contracts</td><td><span class="badge-sm b-ok">yes</span></td><td>(less mature)</td><td>Schema Registry has 8+ years of enterprise hardening</td></tr>
+<tr><td>Sub-millisecond command-and-control</td><td></td><td><span class="badge-sm b-ok">yes</span></td><td>NATS designed for it; Kafka has minimum 5\u201310ms latency</td></tr>
+<tr><td>Request-reply over the bus</td><td></td><td><span class="badge-sm b-ok">yes</span></td><td>Native primitive in NATS; pattern-on-top in Kafka</td></tr>
+<tr><td>Edge-to-cloud federation</td><td></td><td><span class="badge-sm b-ok">yes</span></td><td>Leaf nodes \u00b7 Kafka has no equivalent</td></tr>
+<tr><td>Lightweight footprint</td><td></td><td><span class="badge-sm b-ok">yes</span></td><td>15 MB Go binary vs JVM cluster</td></tr>
+<tr><td>IoT / device telemetry</td><td></td><td><span class="badge-sm b-ok">yes</span></td><td>Subject hierarchy fits device addressing naturally</td></tr>
+<tr><td>Tableflow \u2192 Iceberg analytical hand-off</td><td><span class="badge-sm b-ok">yes</span></td><td></td><td>Kafka-only feature</td></tr>
+<tr><td>Enterprise procurement recognition</td><td><span class="badge-sm b-ok">yes</span></td><td></td><td>Confluent has the brand; NATS / Synadia do not yet</td></tr>
+</table>
+
+<div class="alert alert-info"><strong>The Ruckus architecture choice in one line.</strong> NATS in cloud + MQTT at edge is correct because both are TIB-lineage <em>lightweight</em> branches optimized for command-and-control workloads. The leaf-node federation is the killer feature \u2014 a single primitive that lets the property keep working when the WAN drops, with built-in buffering and reconciliation. Kafka would force a heavier integration story (MirrorMaker, custom edge clients) for the same outcome. <strong style="color:var(--dark)">If Ruckus also needed Tableflow-style analytical materialization for property data, you would add Kafka next to NATS \u2014 not replace NATS with Kafka.</strong></div>
+
 <div class="sl">One pattern, three instances</div>
 <div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:0">The same architectural shape recurs across three real systems: <strong style="color:var(--dark)">a policy decision point with three resolution planes feeding a context bus that everything else subscribes to.</strong> Cisco ISE proved the shape at the network access layer (2011 onward, pxGrid 2014). Conduit applies it to cloud-SaaS private connectivity. Ruckus R1 PubSub applies it to MDU and hospitality property events. Different layers of the stack, different protocols, identical platform thesis.</p></div>
 
