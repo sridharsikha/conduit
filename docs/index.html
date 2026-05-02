@@ -13,11 +13,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--dark)}
 .header h1{color:#fff;font-size:18px;font-weight:600;letter-spacing:-.3px}
 .header .sub{color:#94a3b8;font-size:13px;margin-top:2px}
 .header .badge{background:var(--accent);color:#fff;font-size:10px;padding:3px 10px;border-radius:10px;font-weight:600;letter-spacing:.5px}
-.nav{display:flex;gap:1px;background:var(--border);border-bottom:1px solid var(--border);overflow-x:auto}
-.nav-item{padding:12px 18px;font-size:13px;font-weight:500;cursor:pointer;background:var(--surface2);color:var(--muted);white-space:nowrap;transition:all .15s;border-bottom:2px solid transparent}
-.nav-item:hover{background:var(--surface);color:var(--dark)}
-.nav-item.active{background:var(--surface);color:var(--accent);border-bottom-color:var(--accent)}
-.content{max-width:1100px;margin:0 auto;padding:24px}
+.layout{display:flex;min-height:calc(100vh - 64px)}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;overflow-y:auto;position:sticky;top:0;align-self:flex-start;max-height:100vh}
+.nav-group{margin-bottom:8px}
+.nav-group-label{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:8px 20px 6px;display:block}
+.nav-item{padding:7px 20px 7px 28px;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);transition:all .12s;border-left:2px solid transparent;display:block}
+.nav-item:hover{background:var(--surface2);color:var(--dark)}
+.nav-item.active{background:var(--accent-light);color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.content{flex:1;max-width:1100px;margin:0 auto;padding:24px;min-width:0}
+@media(max-width:900px){.layout{flex-direction:column}.sidebar{width:100%;position:static;max-height:none;border-right:0;border-bottom:1px solid var(--border)}.nav-group{display:inline-block;vertical-align:top;margin:0 8px 8px 0}}
 .sl{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;margin:24px 0 10px}
 .sl:first-child{margin-top:0}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px}
@@ -79,12 +83,41 @@ body{font-family:var(--font);background:var(--bg);color:var(--dark)}
 </div>
 <div class="badge">CONCEPT DEMO</div>
 </div>
-<div class="nav" id="nav"></div>
+<div class="layout">
+<div class="sidebar" id="nav"></div>
 <div class="content" id="content"></div>
+</div>
 
 <script>
-const TABS=['Architecture','Confluent deep-dive','Day 0 setup','Service registry','Developer portal','API playground','Approval flow','Topology','Billing','Lifecycle','Roadmap','Day 0 checklist'];
-let tab=0;
+const NAV=[
+  {group:'Architecture',items:[
+    {id:'arch',label:'Overview',fn:'renderArch'},
+    {id:'l3',label:'L3 — admin view',fn:'renderL3'},
+    {id:'l7',label:'L7 — user view',fn:'renderL7'},
+    {id:'confluent',label:'Confluent deep-dive',fn:'renderConfluent'},
+  ]},
+  {group:'Setup',items:[
+    {id:'day0',label:'Day 0 setup',fn:'renderDay0'},
+    {id:'registry',label:'Service registry',fn:'renderRegistry'},
+    {id:'checklist',label:'Day 0 checklist',fn:'renderChecklist'},
+  ]},
+  {group:'Developer',items:[
+    {id:'portal',label:'Portal',fn:'renderPortal'},
+    {id:'playground',label:'API playground',fn:'renderPlayground'},
+  ]},
+  {group:'Operations',items:[
+    {id:'approval',label:'Approval flow',fn:'renderApproval'},
+    {id:'lifecycle',label:'Lifecycle',fn:'renderLifecycle'},
+    {id:'topology',label:'Topology',fn:'renderTopology'},
+  ]},
+  {group:'Admin',items:[
+    {id:'billing',label:'Billing',fn:'renderBilling'},
+  ]},
+  {group:'Roadmap',items:[
+    {id:'roadmap',label:'Roadmap',fn:'renderRoadmap'},
+  ]},
+];
+let currentTab='arch';
 
 const SAAS={
   confluent:{name:'Confluent Cloud',type:'Kafka streaming',color:'#172554',regions:[
@@ -188,10 +221,30 @@ function saasBadge(s){const p=SAAS[s];return p?`<span class="badge-sm" style="ba
 function findDay0(team,env,csp,region){const t=TEAMS.find(x=>x.name===team);if(!t)return null;return t.accounts.find(a=>a.env===env&&a.csp===csp&&a.region===region)||null}
 
 function render(){
-  document.getElementById('nav').innerHTML=TABS.map((t,i)=>`<div class="nav-item ${i===tab?'active':''}" onclick="tab=${i};render()">${t}</div>`).join('');
-  const fn=[renderArch,renderConfluent,renderDay0,renderRegistry,renderPortal,renderPlayground,renderApproval,renderTopology,renderBilling,renderLifecycle,renderRoadmap,renderChecklist];
-  document.getElementById('content').innerHTML=fn[tab]();
+  const navHTML = NAV.map(g => `
+    <div class="nav-group">
+      <span class="nav-group-label">${g.group}</span>
+      ${g.items.map(it => `<div class="nav-item ${it.id===currentTab?'active':''}" onclick="navigate('${it.id}')">${it.label}</div>`).join('')}
+    </div>
+  `).join('');
+  document.getElementById('nav').innerHTML = navHTML;
+  const item = NAV.flatMap(g=>g.items).find(i=>i.id===currentTab) || NAV[0].items[0];
+  const fn = window[item.fn];
+  document.getElementById('content').innerHTML = typeof fn === 'function' ? fn() : '<p>Tab not found.</p>';
+  document.getElementById('content').scrollTop = 0;
+  window.scrollTo(0, 0);
 }
+function navigate(id){
+  currentTab = id;
+  if (history.replaceState) history.replaceState(null, '', '#' + id);
+  render();
+}
+window.addEventListener('hashchange', () => {
+  const h = location.hash.replace('#','');
+  if (h && NAV.flatMap(g=>g.items).find(i=>i.id===h)) { currentTab = h; render(); }
+});
+// On load, honor URL hash
+(function(){ const h = location.hash.replace('#',''); if (h && NAV.flatMap(g=>g.items).find(i=>i.id===h)) currentTab = h; })();
 
 function renderArch(){
   return `
@@ -929,6 +982,263 @@ function renderConfluent(){
 </div>
 `;
 }
+
+function renderL3(){
+  return `
+<div class="sl">L3 admin view \u2014 what platform ops watches</div>
+<div class="card">
+<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:0">The L3 plane is the network-layer reality: which CSP regions hold Confluent CCNs, where customer VPCs peer, where capacity headroom sits, and what utilization looks like across the fabric. This is the operations view \u2014 platform engineers, not developers, live here.</p>
+</div>
+
+<div class="sl">Confluent CCN footprint \u00b7 by CSP and region</div>
+<div class="card" style="padding:8px;overflow-x:auto">
+<svg width="100%" viewBox="0 0 680 360" style="display:block">
+<defs><marker id="arl3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="20" y="30" width="200" height="310" rx="10" fill="#FFF7ED" stroke="#EA580C" stroke-width="0.5"/>
+<text x="120" y="50" text-anchor="middle" style="font-family:var(--font);font-size:12px;font-weight:600;fill:#9A3412">AWS \u00b7 4 regions</text>
+<rect x="35" y="62" width="170" height="60" rx="6" fill="#fff" stroke="#EA580C" stroke-width="0.5"/>
+<text x="45" y="80" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#9A3412">us-east-1</text>
+<text x="195" y="80" text-anchor="end" style="font-family:var(--font);font-size:10px;fill:#16A34A">3 AZ \u00b7 active</text>
+<text x="45" y="95" style="font-family:var(--font);font-size:10px;fill:#9A3412">CCN: pkc-prod01 \u00b7 PNI</text>
+<rect x="45" y="100" width="150" height="6" rx="3" fill="#FEE4D5"/>
+<rect x="45" y="100" width="105" height="6" rx="3" fill="#16A34A"/>
+<text x="45" y="116" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">capacity 70% \u00b7 8 endpoints \u00b7 1.2 GB/s</text>
+<rect x="35" y="128" width="170" height="60" rx="6" fill="#fff" stroke="#EA580C" stroke-width="0.5"/>
+<text x="45" y="146" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#9A3412">us-west-2</text>
+<text x="195" y="146" text-anchor="end" style="font-family:var(--font);font-size:10px;fill:#16A34A">3 AZ \u00b7 active</text>
+<text x="45" y="161" style="font-family:var(--font);font-size:10px;fill:#9A3412">CCN: pkc-perf02 \u00b7 PrivateLink GW</text>
+<rect x="45" y="166" width="150" height="6" rx="3" fill="#FEE4D5"/>
+<rect x="45" y="166" width="68" height="6" rx="3" fill="#16A34A"/>
+<text x="45" y="182" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">capacity 45% \u00b7 5 endpoints \u00b7 380 MB/s</text>
+<rect x="35" y="194" width="170" height="60" rx="6" fill="#fff" stroke="#EA580C" stroke-width="0.5"/>
+<text x="45" y="212" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#9A3412">eu-west-1</text>
+<text x="195" y="212" text-anchor="end" style="font-family:var(--font);font-size:10px;fill:#D97706">2 AZ \u00b7 degraded</text>
+<text x="45" y="227" style="font-family:var(--font);font-size:10px;fill:#9A3412">CCN: pkc-prod03 \u00b7 PrivateLink GW</text>
+<rect x="45" y="232" width="150" height="6" rx="3" fill="#FEE4D5"/>
+<rect x="45" y="232" width="135" height="6" rx="3" fill="#D97706"/>
+<text x="45" y="248" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">capacity 90% \u00b7 6 endpoints \u00b7 980 MB/s</text>
+<rect x="35" y="260" width="170" height="60" rx="6" fill="#fff" stroke="#EA580C" stroke-width="0.5" stroke-dasharray="3 2"/>
+<text x="45" y="278" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#9A3412">ap-south-1</text>
+<text x="195" y="278" text-anchor="end" style="font-family:var(--font);font-size:10px;fill:#5F5E5A">3 AZ \u00b7 planned</text>
+<text x="45" y="293" style="font-family:var(--font);font-size:10px;fill:#9A3412">CCN provisioning Q3</text>
+<text x="45" y="307" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">2 endpoints pre-allocated</text>
+<rect x="240" y="30" width="200" height="310" rx="10" fill="#EFF6FF" stroke="#2563EB" stroke-width="0.5"/>
+<text x="340" y="50" text-anchor="middle" style="font-family:var(--font);font-size:12px;font-weight:600;fill:#1E40AF">Azure \u00b7 3 regions</text>
+<rect x="255" y="62" width="170" height="60" rx="6" fill="#fff" stroke="#2563EB" stroke-width="0.5"/>
+<text x="265" y="80" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#1E40AF">eastus</text>
+<text x="415" y="80" text-anchor="end" style="font-family:var(--font);font-size:10px;fill:#16A34A">3 AZ \u00b7 active</text>
+<text x="265" y="95" style="font-family:var(--font);font-size:10px;fill:#1E40AF">CCN: pkc-prod05 \u00b7 Private EP</text>
+<rect x="265" y="100" width="150" height="6" rx="3" fill="#DBEAFE"/>
+<rect x="265" y="100" width="82" height="6" rx="3" fill="#16A34A"/>
+<text x="265" y="116" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">capacity 55% \u00b7 4 endpoints \u00b7 540 MB/s</text>
+<rect x="255" y="128" width="170" height="60" rx="6" fill="#fff" stroke="#2563EB" stroke-width="0.5"/>
+<text x="265" y="146" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#1E40AF">westeurope</text>
+<text x="415" y="146" text-anchor="end" style="font-family:var(--font);font-size:10px;fill:#16A34A">3 AZ \u00b7 active</text>
+<text x="265" y="161" style="font-family:var(--font);font-size:10px;fill:#1E40AF">CCN: pkc-prod06 \u00b7 Private EP</text>
+<rect x="265" y="166" width="150" height="6" rx="3" fill="#DBEAFE"/>
+<rect x="265" y="166" width="48" height="6" rx="3" fill="#16A34A"/>
+<text x="265" y="182" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">capacity 32% \u00b7 3 endpoints \u00b7 290 MB/s</text>
+<rect x="255" y="194" width="170" height="60" rx="6" fill="#fff" stroke="#2563EB" stroke-width="0.5"/>
+<text x="265" y="212" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#1E40AF">australiaeast</text>
+<text x="415" y="212" text-anchor="end" style="font-family:var(--font);font-size:10px;fill:#16A34A">2 AZ \u00b7 active</text>
+<text x="265" y="227" style="font-family:var(--font);font-size:10px;fill:#1E40AF">CCN: pkc-perf07 \u00b7 Private EP</text>
+<rect x="265" y="232" width="150" height="6" rx="3" fill="#DBEAFE"/>
+<rect x="265" y="232" width="22" height="6" rx="3" fill="#16A34A"/>
+<text x="265" y="248" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">capacity 15% \u00b7 1 endpoint \u00b7 80 MB/s</text>
+<text x="265" y="280" style="font-family:var(--font);font-size:10px;fill:#5F5E5A">ExpressRoute peerings: 3</text>
+<text x="265" y="296" style="font-family:var(--font);font-size:10px;fill:#5F5E5A">VNet peerings: 7</text>
+<text x="265" y="312" style="font-family:var(--font);font-size:10px;fill:#5F5E5A">cross-region traffic: 12% of total</text>
+<rect x="460" y="30" width="200" height="310" rx="10" fill="#F0FDF4" stroke="#16A34A" stroke-width="0.5"/>
+<text x="560" y="50" text-anchor="middle" style="font-family:var(--font);font-size:12px;font-weight:600;fill:#166534">GCP \u00b7 2 regions</text>
+<rect x="475" y="62" width="170" height="60" rx="6" fill="#fff" stroke="#16A34A" stroke-width="0.5"/>
+<text x="485" y="80" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#166534">europe-west1</text>
+<text x="635" y="80" text-anchor="end" style="font-family:var(--font);font-size:10px;fill:#16A34A">3 AZ \u00b7 active</text>
+<text x="485" y="95" style="font-family:var(--font);font-size:10px;fill:#166534">CCN: pkc-prod08 \u00b7 PSC</text>
+<rect x="485" y="100" width="150" height="6" rx="3" fill="#DCFCE7"/>
+<rect x="485" y="100" width="92" height="6" rx="3" fill="#16A34A"/>
+<text x="485" y="116" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">capacity 62% \u00b7 5 endpoints \u00b7 720 MB/s</text>
+<rect x="475" y="128" width="170" height="60" rx="6" fill="#fff" stroke="#16A34A" stroke-width="0.5"/>
+<text x="485" y="146" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#166534">us-central1</text>
+<text x="635" y="146" text-anchor="end" style="font-family:var(--font);font-size:10px;fill:#16A34A">2 AZ \u00b7 active</text>
+<text x="485" y="161" style="font-family:var(--font);font-size:10px;fill:#166534">CCN: pkc-prod09 \u00b7 PSC</text>
+<rect x="485" y="166" width="150" height="6" rx="3" fill="#DCFCE7"/>
+<rect x="485" y="166" width="35" height="6" rx="3" fill="#16A34A"/>
+<text x="485" y="182" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">capacity 23% \u00b7 2 endpoints \u00b7 180 MB/s</text>
+<text x="485" y="220" style="font-family:var(--font);font-size:10px;fill:#5F5E5A">PSC connections: 7</text>
+<text x="485" y="236" style="font-family:var(--font);font-size:10px;fill:#5F5E5A">VPC peerings: 4</text>
+<text x="485" y="252" style="font-family:var(--font);font-size:10px;fill:#5F5E5A">Cluster Linking pairs: 2</text>
+<text x="485" y="268" style="font-family:var(--font);font-size:10px;fill:#5F5E5A">cross-cloud (\u2192 AWS): 1</text>
+</svg>
+<p style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.7"><strong style="color:var(--dark)">Reading the diagram:</strong> 9 active CCNs across 3 CSPs, 1 in eu-west-1 running hot at 90% (alert candidate), ap-south-1 pre-provisioning for Q3 demand. Color band shows live utilization, count under each card shows endpoint and bandwidth load.</p>
+</div>
+
+<div class="sl">HA + capacity matrix</div>
+<table class="tbl">
+<tr><th>CCN</th><th>CSP</th><th>Region</th><th>AZs</th><th>Endpoints</th><th>Throughput</th><th>Capacity</th><th>HA tier</th><th>Status</th></tr>
+<tr><td class="mono">pkc-prod01</td><td><span class="badge-sm b-aws">AWS</span></td><td>us-east-1</td><td>3</td><td>8</td><td>1.2 GB/s</td><td>70%</td><td>multi-AZ active-active</td><td><span class="badge-sm b-ok">healthy</span></td></tr>
+<tr><td class="mono">pkc-perf02</td><td><span class="badge-sm b-aws">AWS</span></td><td>us-west-2</td><td>3</td><td>5</td><td>380 MB/s</td><td>45%</td><td>multi-AZ active-active</td><td><span class="badge-sm b-ok">healthy</span></td></tr>
+<tr><td class="mono">pkc-prod03</td><td><span class="badge-sm b-aws">AWS</span></td><td>eu-west-1</td><td>2</td><td>6</td><td>980 MB/s</td><td>90%</td><td>multi-AZ degraded</td><td><span class="badge-sm b-warn">capacity alert</span></td></tr>
+<tr><td class="mono">pkc-prod05</td><td><span class="badge-sm b-azure">AZURE</span></td><td>eastus</td><td>3</td><td>4</td><td>540 MB/s</td><td>55%</td><td>multi-zone active-active</td><td><span class="badge-sm b-ok">healthy</span></td></tr>
+<tr><td class="mono">pkc-prod06</td><td><span class="badge-sm b-azure">AZURE</span></td><td>westeurope</td><td>3</td><td>3</td><td>290 MB/s</td><td>32%</td><td>multi-zone active-active</td><td><span class="badge-sm b-ok">healthy</span></td></tr>
+<tr><td class="mono">pkc-perf07</td><td><span class="badge-sm b-azure">AZURE</span></td><td>australiaeast</td><td>2</td><td>1</td><td>80 MB/s</td><td>15%</td><td>multi-zone active-active</td><td><span class="badge-sm b-ok">healthy</span></td></tr>
+<tr><td class="mono">pkc-prod08</td><td><span class="badge-sm b-gcp">GCP</span></td><td>europe-west1</td><td>3</td><td>5</td><td>720 MB/s</td><td>62%</td><td>regional active-active</td><td><span class="badge-sm b-ok">healthy</span></td></tr>
+<tr><td class="mono">pkc-prod09</td><td><span class="badge-sm b-gcp">GCP</span></td><td>us-central1</td><td>2</td><td>2</td><td>180 MB/s</td><td>23%</td><td>regional active-active</td><td><span class="badge-sm b-ok">healthy</span></td></tr>
+</table>
+
+<div class="sl">DR + Cluster Linking pairs</div>
+<table class="tbl">
+<tr><th>Source CCN</th><th>Destination CCN</th><th>Type</th><th>Lag</th><th>Mirror topics</th><th>RPO target</th><th>Status</th></tr>
+<tr><td class="mono">pkc-prod01 (AWS us-east-1)</td><td class="mono">pkc-prod03 (AWS eu-west-1)</td><td>cross-region DR</td><td>2.4 s</td><td>orders, payments, audit</td><td>30 s</td><td><span class="badge-sm b-ok">in-spec</span></td></tr>
+<tr><td class="mono">pkc-prod05 (Azure eastus)</td><td class="mono">pkc-prod06 (Azure westeurope)</td><td>cross-region DR</td><td>3.1 s</td><td>orders, telemetry</td><td>30 s</td><td><span class="badge-sm b-ok">in-spec</span></td></tr>
+<tr><td class="mono">pkc-prod01 (AWS us-east-1)</td><td class="mono">pkc-prod08 (GCP europe-west1)</td><td>cross-cloud bridge</td><td>4.7 s</td><td>orders</td><td>60 s</td><td><span class="badge-sm b-ok">in-spec</span></td></tr>
+</table>
+
+<div class="sl">Capacity headroom \u2014 next 90 days</div>
+<div class="card">
+<div class="cb-row"><span style="width:200px">eu-west-1 (pkc-prod03)</span><div class="cb-bar-wrap"><div class="cb-bar" style="width:90%;background:var(--amber)"></div></div><span style="font-size:11px;color:var(--amber);font-weight:600">90% \u00b7 needs +1 broker by week 8</span></div>
+<div class="cb-row"><span style="width:200px">us-east-1 (pkc-prod01)</span><div class="cb-bar-wrap"><div class="cb-bar" style="width:70%;background:var(--green)"></div></div><span style="font-size:11px;color:var(--muted)">70% \u00b7 forecast 78% at week 12</span></div>
+<div class="cb-row"><span style="width:200px">europe-west1 (pkc-prod08)</span><div class="cb-bar-wrap"><div class="cb-bar" style="width:62%;background:var(--green)"></div></div><span style="font-size:11px;color:var(--muted)">62% \u00b7 forecast 71% at week 12</span></div>
+<div class="cb-row"><span style="width:200px">eastus (pkc-prod05)</span><div class="cb-bar-wrap"><div class="cb-bar" style="width:55%;background:var(--green)"></div></div><span style="font-size:11px;color:var(--muted)">55% \u00b7 forecast 60% at week 12</span></div>
+<div class="cb-row"><span style="width:200px">us-west-2 (pkc-perf02)</span><div class="cb-bar-wrap"><div class="cb-bar" style="width:45%;background:var(--green)"></div></div><span style="font-size:11px;color:var(--muted)">45% \u00b7 forecast 52% at week 12</span></div>
+<div class="cb-row"><span style="width:200px">us-central1 (pkc-prod09)</span><div class="cb-bar-wrap"><div class="cb-bar" style="width:23%;background:var(--green)"></div></div><span style="font-size:11px;color:var(--muted)">23% \u00b7 forecast 28% at week 12</span></div>
+<div class="cb-row"><span style="width:200px">australiaeast (pkc-perf07)</span><div class="cb-bar-wrap"><div class="cb-bar" style="width:15%;background:var(--green)"></div></div><span style="font-size:11px;color:var(--muted)">15% \u00b7 forecast 18% at week 12</span></div>
+</div>
+
+<div class="alert alert-warn"><strong>Active capacity alert.</strong> pkc-prod03 (AWS eu-west-1) projected to cross 95% by week 8 at current ingestion growth. Recommended action: add 1 broker in week 6 or shift orders-eu topic to pkc-prod06 (Azure westeurope, capacity 32%) via Cluster Linking.</div>
+`;}
+
+function renderL7(){
+  return `
+<div class="sl">L7 user view \u2014 what flows are connected</div>
+<div class="card">
+<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:0">The L7 plane is the application-layer reality from the developer's perspective: which service-to-Kafka flows are live, what private DNS names resolve where, which RFC1918 ranges are in play, and which API patterns each connection uses. This is the view a developer or service owner debugs from.</p>
+</div>
+
+<div class="sl">Active flows \u00b7 service \u2192 Confluent</div>
+<div class="card" style="padding:8px;overflow-x:auto">
+<svg width="100%" viewBox="0 0 680 400" style="display:block">
+<defs><marker id="arl7" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="20" y="30" width="200" height="350" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/>
+<text x="120" y="50" text-anchor="middle" style="font-family:var(--font);font-size:12px;font-weight:600;fill:#0F766E">Services (RFC1918)</text>
+<rect x="35" y="62" width="170" height="48" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="45" y="80" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">order-svc</text>
+<text x="45" y="94" style="font-family:var(--font);font-size:10px;fill:#0F766E">10.0.4.0/24 \u00b7 prod</text>
+<text x="45" y="105" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">Commerce \u00b7 us-east-1</text>
+<rect x="35" y="116" width="170" height="48" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="45" y="134" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">payment-svc</text>
+<text x="45" y="148" style="font-family:var(--font);font-size:10px;fill:#0F766E">10.0.5.0/24 \u00b7 prod</text>
+<text x="45" y="159" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">Commerce \u00b7 us-east-1</text>
+<rect x="35" y="170" width="170" height="48" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="45" y="188" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">analytics-worker</text>
+<text x="45" y="202" style="font-family:var(--font);font-size:10px;fill:#0F766E">10.3.2.0/24 \u00b7 prod</text>
+<text x="45" y="213" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">Data \u00b7 europe-west1</text>
+<rect x="35" y="224" width="170" height="48" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="45" y="242" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">fraud-detect</text>
+<text x="45" y="256" style="font-family:var(--font);font-size:10px;fill:#0F766E">10.4.1.0/24 \u00b7 prod</text>
+<text x="45" y="267" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">ML Platform \u00b7 westeurope</text>
+<rect x="35" y="278" width="170" height="48" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="45" y="296" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">ml-pipeline</text>
+<text x="45" y="310" style="font-family:var(--font);font-size:10px;fill:#0F766E">10.4.7.0/24 \u00b7 perf</text>
+<text x="45" y="321" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">ML Platform \u00b7 us-east-1</text>
+<rect x="35" y="332" width="170" height="42" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5" stroke-dasharray="3 2"/>
+<text x="45" y="350" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">audit-export</text>
+<text x="45" y="364" style="font-family:var(--font);font-size:10px;fill:#0F766E">10.0.9.0/24 \u00b7 dev (idle)</text>
+<rect x="240" y="30" width="200" height="350" rx="10" fill="#F5F3FF" stroke="#7C3AED" stroke-width="0.5"/>
+<text x="340" y="50" text-anchor="middle" style="font-family:var(--font);font-size:12px;font-weight:600;fill:#5B21B6">Internal DNS \u00b7 PHZ</text>
+<text x="340" y="66" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#7C3AED">Route53 / Azure DNS / Cloud DNS</text>
+<rect x="255" y="80" width="170" height="50" rx="6" fill="#fff" stroke="#7C3AED" stroke-width="0.5"/>
+<text x="265" y="98" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#5B21B6">*.aws.confluent.cloud</text>
+<text x="265" y="112" style="font-family:var(--font);font-size:9px;fill:#7C3AED">us-east-1 \u2192 vpce-0a3c (10.0.1.47)</text>
+<text x="265" y="123" style="font-family:var(--font);font-size:9px;fill:#7C3AED">us-west-2 \u2192 vpce-0b4d (10.1.2.50)</text>
+<rect x="255" y="136" width="170" height="50" rx="6" fill="#fff" stroke="#7C3AED" stroke-width="0.5"/>
+<text x="265" y="154" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#5B21B6">*.aws.confluent.cloud</text>
+<text x="265" y="168" style="font-family:var(--font);font-size:9px;fill:#7C3AED">eu-west-1 \u2192 vpce-0e1f (10.2.0.20)</text>
+<rect x="255" y="192" width="170" height="50" rx="6" fill="#fff" stroke="#7C3AED" stroke-width="0.5"/>
+<text x="265" y="210" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#5B21B6">*.azure.confluent.cloud</text>
+<text x="265" y="224" style="font-family:var(--font);font-size:9px;fill:#7C3AED">eastus \u2192 pep-0g2h (10.5.1.10)</text>
+<text x="265" y="235" style="font-family:var(--font);font-size:9px;fill:#7C3AED">westeurope \u2192 pep-0j4k (10.6.0.30)</text>
+<rect x="255" y="248" width="170" height="50" rx="6" fill="#fff" stroke="#7C3AED" stroke-width="0.5"/>
+<text x="265" y="266" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#5B21B6">*.gcp.confluent.cloud</text>
+<text x="265" y="280" style="font-family:var(--font);font-size:9px;fill:#7C3AED">europe-west1 \u2192 psc-0m5n (10.7.0.5)</text>
+<rect x="255" y="304" width="170" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="0.5"/>
+<text x="265" y="322" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#92400E">Schema Registry (public)</text>
+<text x="265" y="336" style="font-family:var(--font);font-size:9px;fill:#B45309">psrc-*.confluent.cloud</text>
+<text x="265" y="348" style="font-family:var(--font);font-size:9px;fill:#B45309">resolves to public IP</text>
+<text x="265" y="358" style="font-family:var(--font);font-size:9px;fill:#B45309">requires egress 443</text>
+<rect x="460" y="30" width="200" height="350" rx="10" fill="#EFF6FF" stroke="#172554" stroke-width="0.5"/>
+<text x="560" y="50" text-anchor="middle" style="font-family:var(--font);font-size:12px;font-weight:600;fill:#172554">Confluent CCNs</text>
+<rect x="475" y="62" width="170" height="48" rx="6" fill="#fff" stroke="#172554" stroke-width="0.5"/>
+<text x="485" y="80" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#172554">pkc-prod01 (AWS east)</text>
+<text x="485" y="94" style="font-family:var(--font);font-size:10px;fill:#1E40AF">topics: orders, payments</text>
+<text x="485" y="105" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">PNI \u00b7 9092 mTLS</text>
+<rect x="475" y="116" width="170" height="48" rx="6" fill="#fff" stroke="#172554" stroke-width="0.5"/>
+<text x="485" y="134" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#172554">pkc-prod03 (AWS eu)</text>
+<text x="485" y="148" style="font-family:var(--font);font-size:10px;fill:#1E40AF">topics: orders-eu, audit</text>
+<text x="485" y="159" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">PrivateLink GW \u00b7 9092 mTLS</text>
+<rect x="475" y="170" width="170" height="48" rx="6" fill="#fff" stroke="#172554" stroke-width="0.5"/>
+<text x="485" y="188" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#172554">pkc-prod06 (Azure eu)</text>
+<text x="485" y="202" style="font-family:var(--font);font-size:10px;fill:#1E40AF">topics: orders-eu mirror</text>
+<text x="485" y="213" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">Private EP \u00b7 9092 mTLS</text>
+<rect x="475" y="224" width="170" height="48" rx="6" fill="#fff" stroke="#172554" stroke-width="0.5"/>
+<text x="485" y="242" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#172554">pkc-prod08 (GCP eu)</text>
+<text x="485" y="256" style="font-family:var(--font);font-size:10px;fill:#1E40AF">topics: ml-features</text>
+<text x="485" y="267" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">PSC \u00b7 9092 mTLS</text>
+<rect x="475" y="278" width="170" height="48" rx="6" fill="#fff" stroke="#172554" stroke-width="0.5"/>
+<text x="485" y="296" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#172554">pkc-perf02 (AWS west)</text>
+<text x="485" y="310" style="font-family:var(--font);font-size:10px;fill:#1E40AF">topics: ml-events</text>
+<text x="485" y="321" style="font-family:var(--font);font-size:9px;fill:#5F5E5A">PrivateLink GW \u00b7 9092 mTLS</text>
+<rect x="475" y="332" width="170" height="42" rx="6" fill="#FFFBEB" stroke="#D97706" stroke-width="0.5" stroke-dasharray="3 2"/>
+<text x="485" y="350" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#92400E">audit-staging (idle)</text>
+<text x="485" y="364" style="font-family:var(--font);font-size:10px;fill:#B45309">hibernated \u00b7 wake-on-DNS</text>
+<line x1="206" y1="86" x2="252" y2="100" stroke="#0F766E" stroke-width="1" marker-end="url(#arl7)"/>
+<line x1="426" y1="100" x2="473" y2="86" stroke="#7C3AED" stroke-width="1" marker-end="url(#arl7)"/>
+<line x1="206" y1="140" x2="252" y2="105" stroke="#0F766E" stroke-width="1" marker-end="url(#arl7)"/>
+<line x1="426" y1="105" x2="473" y2="140" stroke="#7C3AED" stroke-width="1" marker-end="url(#arl7)"/>
+<line x1="206" y1="194" x2="252" y2="161" stroke="#0F766E" stroke-width="1" marker-end="url(#arl7)"/>
+<line x1="426" y1="161" x2="473" y2="194" stroke="#7C3AED" stroke-width="1" marker-end="url(#arl7)"/>
+<line x1="206" y1="248" x2="252" y2="217" stroke="#0F766E" stroke-width="1" marker-end="url(#arl7)"/>
+<line x1="426" y1="217" x2="473" y2="194" stroke="#7C3AED" stroke-width="1" marker-end="url(#arl7)"/>
+<line x1="206" y1="302" x2="252" y2="273" stroke="#0F766E" stroke-width="1" marker-end="url(#arl7)"/>
+<line x1="426" y1="273" x2="473" y2="248" stroke="#7C3AED" stroke-width="1" marker-end="url(#arl7)"/>
+<line x1="206" y1="354" x2="252" y2="334" stroke="#0F766E" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#arl7)"/>
+<line x1="426" y1="334" x2="473" y2="354" stroke="#D97706" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#arl7)"/>
+</svg>
+<p style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.7"><strong style="color:var(--dark)">Reading the diagram:</strong> Each service resolves a Confluent bootstrap hostname through its private DNS zone, which returns a private IP inside the customer VPC's RFC1918 range. Schema Registry resolves to a public IP \u2014 traffic for that flow leaves through the egress NAT, not the private endpoint. Hibernated flows resolve but the endpoint behind the DNS wakes on first connect.</p>
+</div>
+
+<div class="sl">Flow inventory \u00b7 by service</div>
+<table class="tbl">
+<tr><th>Service</th><th>Source CIDR</th><th>Bootstrap host</th><th>Private IP</th><th>Topic</th><th>Pattern</th><th>State</th></tr>
+<tr><td><strong>order-svc</strong></td><td class="mono">10.0.4.0/24</td><td class="mono" style="font-size:10px">pkc-prod01.us-east-1.aws.confluent.cloud</td><td class="mono">10.0.1.47</td><td>orders, payments</td><td>producer</td><td><span class="badge-sm b-ok">active</span></td></tr>
+<tr><td><strong>payment-svc</strong></td><td class="mono">10.0.5.0/24</td><td class="mono" style="font-size:10px">pkc-prod01.us-east-1.aws.confluent.cloud</td><td class="mono">10.0.1.47</td><td>payments, settlements</td><td>producer + consumer</td><td><span class="badge-sm b-ok">active</span></td></tr>
+<tr><td><strong>analytics-worker</strong></td><td class="mono">10.3.2.0/24</td><td class="mono" style="font-size:10px">pkc-prod08.europe-west1.gcp.confluent.cloud</td><td class="mono">10.7.0.5</td><td>orders-eu, telemetry</td><td>consumer</td><td><span class="badge-sm b-ok">active</span></td></tr>
+<tr><td><strong>fraud-detect</strong></td><td class="mono">10.4.1.0/24</td><td class="mono" style="font-size:10px">pkc-prod06.westeurope.azure.confluent.cloud</td><td class="mono">10.6.0.30</td><td>orders-eu mirror</td><td>consumer (Cluster Linked)</td><td><span class="badge-sm b-ok">active</span></td></tr>
+<tr><td><strong>ml-pipeline</strong></td><td class="mono">10.4.7.0/24</td><td class="mono" style="font-size:10px">pkc-perf02.us-west-2.aws.confluent.cloud</td><td class="mono">10.1.2.50</td><td>ml-events, ml-features</td><td>producer + consumer</td><td><span class="badge-sm b-ok">active</span></td></tr>
+<tr><td><strong>audit-export</strong></td><td class="mono">10.0.9.0/24</td><td class="mono" style="font-size:10px">pkc-prod03.eu-west-1.aws.confluent.cloud</td><td class="mono">10.2.0.20</td><td>audit</td><td>consumer</td><td><span class="badge-sm b-warn">hibernated</span></td></tr>
+</table>
+
+<div class="sl">RFC1918 allocation \u00b7 by team and CSP</div>
+<table class="tbl">
+<tr><th>Team</th><th>CSP</th><th>VPC / VNet CIDR</th><th>Subnet allocated</th><th>Used</th><th>Free</th></tr>
+<tr><td>Commerce</td><td><span class="badge-sm b-aws">AWS</span></td><td class="mono">10.0.0.0/16</td><td>14 subnets</td><td>62%</td><td>38% (24,832 IPs)</td></tr>
+<tr><td>Data</td><td><span class="badge-sm b-gcp">GCP</span></td><td class="mono">10.3.0.0/16</td><td>9 subnets</td><td>41%</td><td>59% (38,656 IPs)</td></tr>
+<tr><td>ML Platform</td><td><span class="badge-sm b-azure">AZURE</span></td><td class="mono">10.4.0.0/16</td><td>11 subnets</td><td>54%</td><td>46% (30,144 IPs)</td></tr>
+<tr><td>ML Platform</td><td><span class="badge-sm b-aws">AWS</span></td><td class="mono">10.4.0.0/16</td><td>5 subnets</td><td>22%</td><td>78% (51,200 IPs)</td></tr>
+<tr><td>Platform</td><td><span class="badge-sm b-aws">AWS</span></td><td class="mono">10.255.0.0/16</td><td>shared services</td><td>30%</td><td>70%</td></tr>
+</table>
+
+<div class="alert alert-info"><strong>Why RFC1918 matters here:</strong> VPC/VNet Peering requires non-overlapping CIDRs across both sides, which forces tight IP planning. PrivateLink Gateway and PSC sidestep this entirely \u2014 the connection point inside the customer VPC borrows a single IP from any subnet, no CIDR coordination needed. This table is the input to the connectivity-option recommendation engine.</div>
+
+<div class="sl">Internal DNS \u00b7 resolution map</div>
+<table class="tbl">
+<tr><th>Hostname pattern</th><th>Zone type</th><th>Resolves to</th><th>Reach</th><th>Notes</th></tr>
+<tr><td class="mono" style="font-size:11px">*.aws.confluent.cloud</td><td>Route53 PHZ</td><td>VPC Endpoint private IP</td><td>private only</td><td>per-VPC, per-region, attached to vpce</td></tr>
+<tr><td class="mono" style="font-size:11px">*.azure.confluent.cloud</td><td>Azure Private DNS Zone</td><td>Private Endpoint NIC IP</td><td>private only</td><td>linked to VNet</td></tr>
+<tr><td class="mono" style="font-size:11px">*.gcp.confluent.cloud</td><td>Cloud DNS managed zone</td><td>PSC endpoint IP</td><td>private only</td><td>visible inside VPC</td></tr>
+<tr><td class="mono" style="font-size:11px">psrc-*.confluent.cloud</td><td>public DNS</td><td>public IP</td><td>internet 443</td><td><span style="color:var(--red)">requires egress NAT \u2014 the gotcha</span></td></tr>
+<tr><td class="mono" style="font-size:11px">api.confluent.cloud</td><td>public DNS</td><td>public IP</td><td>internet 443</td><td>CLI, control plane, Console</td></tr>
+</table>
+`;}
 
 function var_accent(){return 'var(--accent)'}
 function var_teal(){return 'var(--teal)'}
