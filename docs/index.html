@@ -141,8 +141,71 @@ const NAV=[
   {group:'Roadmap',items:[
     {id:'roadmap',label:'Roadmap',fn:'renderRoadmap'},
   ]},
+  {group:'Meta',items:[
+    {id:'changelog',label:'Changelog',fn:'renderChangelog'},
+  ]},
 ];
 let currentTab='arch';
+
+const BUILD={
+  version:'1.0.0',
+  date:'2026-05-02',
+  commits:12,
+  label:'v1.0 \u00b7 confluent interview portfolio',
+  changelog:[
+    {v:'1.0.0',date:'2026-05-02',title:'Confluent interview portfolio complete',notes:[
+      'CDC sources \u2192 Kafka \u2192 Flink \u2192 analytical destinations diagram in Confluent topology tab',
+      'Flink SQL fraud detection example (30-line job with WATERMARK and TUMBLE windowing)',
+      'Snowflake / Databricks framing as analytical destinations, not competitors',
+    ]},
+    {v:'0.9.0',date:'2026-05-02',title:'Vendor brand scrub',notes:[
+      'Removed Ruckus brand references from Patterns tab',
+      'Renamed "Ruckus R1 PubSub" to "Hybrid PubSub" throughout',
+      'Kept ButterflyMX, Hapi, MDU, hospitality, property as public partners and verticals',
+    ]},
+    {v:'0.8.0',date:'2026-05-02',title:'Information Bus family tree + NATS deep-dive',notes:[
+      'Family tree diagram: TIB (1985) \u2192 MQTT / NATS / JMS-Kafka',
+      'NATS architecture diagram: 3-server cluster + leaf node + JetStream',
+      'NATS vs Kafka 10-row honest comparison table',
+      'Derek Collison ex-TIBCO genealogy explanation',
+    ]},
+    {v:'0.7.0',date:'2026-05-02',title:'Confluent topology tab',notes:[
+      'Four-tier topology: Sources \u2192 CSP middle mile \u2192 Confluent CCN \u2192 Access patterns',
+      'Six access pattern accordion items including WarpStream BYOC',
+      'Cluster type \u2192 networking compatibility matrix',
+      '"Confluent \u2260 Cloudflare" framing callout',
+    ]},
+    {v:'0.6.0',date:'2026-05-02',title:'The pattern (ISE / Conduit / Hybrid)',notes:[
+      'Three-column SVG comparing ISE pxGrid, Conduit, Hybrid PubSub',
+      'Component-by-component mapping table across all three systems',
+      'SecureX cautionary note: platform value lives in the bus, not the dashboard',
+    ]},
+    {v:'0.5.0',date:'2026-05-01',title:'Conduit on Confluent + Event stream tab',notes:[
+      'pxGrid-style architecture section in Overview tab',
+      'New Event stream tab in Operations group with live tail simulation',
+      'Topic catalog: conduit.connections.* / preflight.* / lifecycle.* / metering.*',
+    ]},
+    {v:'0.4.0',date:'2026-05-01',title:'Accordion / dashboard refactor',notes:[
+      'Converted dense tables to accordion format on 5 tabs',
+      'Expand-all / collapse-all toolbar; default collapsed',
+    ]},
+    {v:'0.3.0',date:'2026-04-30',title:'Restructure: focused tabs',notes:[
+      'Split L3 / L7 mixed views into focused tabs',
+      'Rebuilt Overview tab around three-plane resolver concept',
+      'Dropped redundant Topology tab in favor of focused operations views',
+    ]},
+    {v:'0.2.0',date:'2026-04-30',title:'Grouped left-nav refactor',notes:[
+      'Six nav groups: Architecture, Setup, Developer, Operations, Admin, Roadmap',
+      'Hash routing for direct tab links',
+      'Sandboxed-iframe SecurityError guard on replaceState',
+    ]},
+    {v:'0.1.0',date:'2026-04-29',title:'Initial Confluent deep-dive',notes:[
+      'Eight Confluent deployment patterns as accordion',
+      'Honest topology framing (no Equinix POPs, no anycast)',
+      'Value-led README focused on the three-plane resolver',
+    ]},
+  ]
+};
 
 const SAAS={
   confluent:{name:'Confluent Cloud',type:'Kafka streaming',color:'#172554',regions:[
@@ -251,7 +314,12 @@ function render(){
       <span class="nav-group-label">${g.group}</span>
       ${g.items.map(it => `<div class="nav-item ${it.id===currentTab?'active':''}" onclick="navigate('${it.id}')">${it.label}</div>`).join('')}
     </div>
-  `).join('');
+  `).join('') + `
+    <div style="padding:14px 18px 12px;margin-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);line-height:1.5">
+      <div style="font-family:var(--mono);font-weight:600;color:var(--accent);cursor:pointer" onclick="navigate('changelog')" title="View changelog">v${BUILD.version}</div>
+      <div style="margin-top:2px">${BUILD.date} \u00b7 ${BUILD.commits} commits</div>
+    </div>
+  `;
   document.getElementById('nav').innerHTML = navHTML;
   const item = NAV.flatMap(g=>g.items).find(i=>i.id===currentTab) || NAV[0].items[0];
   const fn = window[item.fn];
@@ -279,6 +347,15 @@ window.addEventListener('hashchange', () => {
     if (h && NAV.flatMap(g=>g.items).find(i=>i.id===h)) currentTab = h;
   } catch(e) { /* sandboxed: ignore */ }
 })();
+
+// Build banner for DevTools-aware viewers
+try {
+  console.log('%c Conduit %c v' + BUILD.version + ' \u00b7 ' + BUILD.date + ' ',
+    'background:#1e293b;color:#fff;padding:4px 8px;border-radius:3px 0 0 3px;font-weight:700',
+    'background:#7C3AED;color:#fff;padding:4px 8px;border-radius:0 3px 3px 0');
+  console.log('%cMulti-SaaS private connectivity platform \u00b7 ' + BUILD.commits + ' commits', 'color:#64748b;font-style:italic');
+  console.log('%cRepo: %chttps://github.com/sridharsikha/conduit', 'color:#64748b', 'color:#7C3AED');
+} catch(e) { /* not in browser context */ }
 
 // Accordion helpers — first item open by default, rest collapsed
 function accGroup(id, items){
@@ -2583,6 +2660,37 @@ Everything in Pro<br><strong style="color:var(--dark)">Serverless endpoints (DNS
 </div>
 `;
 }
+
+function renderChangelog(){
+  const entries = BUILD.changelog.map(e => `
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px">
+        <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);background:var(--surface2);padding:3px 10px;border-radius:4px">v${e.v}</span>
+        <span style="font-size:11px;color:var(--muted);font-family:var(--mono)">${e.date}</span>
+        <span style="font-size:13px;font-weight:600;color:var(--dark)">${e.title}</span>
+      </div>
+      <ul style="margin:8px 0 0 0;padding-left:22px;font-size:12px;color:var(--muted);line-height:1.7">
+        ${e.notes.map(n => `<li>${n}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
+  return `
+<div class="sl">Build info</div>
+<div class="card">
+<table class="tbl" style="margin:0">
+<tr><td style="width:140px"><strong>Version</strong></td><td><span class="mono" style="font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:700">${BUILD.version}</span></td></tr>
+<tr><td><strong>Build date</strong></td><td><span class="mono" style="font-family:var(--mono);font-size:12px">${BUILD.date}</span></td></tr>
+<tr><td><strong>Commits</strong></td><td>${BUILD.commits} on feature/confluent-interview-portfolio, merged to main</td></tr>
+<tr><td><strong>Repo</strong></td><td><a href="https://github.com/sridharsikha/conduit" target="_blank" style="color:var(--accent)">github.com/sridharsikha/conduit</a></td></tr>
+<tr><td><strong>Live URL</strong></td><td><a href="https://sridharsikha.github.io/conduit/" target="_blank" style="color:var(--accent)">sridharsikha.github.io/conduit/</a></td></tr>
+</table>
+</div>
+
+<div class="sl">Version history</div>
+${entries}
+
+<div class="alert alert-info"><strong>About this portal.</strong> Conduit is a working prototype of a multi-SaaS private connectivity platform \u2014 the kind of thing a Senior PM Cloud Networking would design at Confluent or an equivalent platform team. The architecture sections (Overview, Confluent topology, Patterns, Confluent deep-dive) are intentionally rich because the recurring observation in modern data infrastructure is that <strong style="color:var(--dark)">the platform value lives in the bus, not the dashboard</strong> \u2014 same lesson as ISE / pxGrid in 2014, applied to cloud-SaaS connectivity in 2026.</div>
+`;}
 
 function renderChecklist(){
   const chk=(done,text)=>`<div style="display:flex;gap:8px;padding:5px 0;font-size:12px;line-height:1.5"><span style="flex-shrink:0;width:18px;height:18px;border-radius:4px;border:1px solid ${done?'var(--green)':'var(--border)'};background:${done?'var(--green-light)':'var(--surface)'};display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--green)">${done?'&#10003;':''}</span><span style="color:${done?'var(--dark)':'var(--muted)'}">${text}</span></div>`;
