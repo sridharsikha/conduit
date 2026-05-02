@@ -284,7 +284,7 @@ function accGroup(id, items){
     <button onclick="accSet('${id}', false)">Collapse all</button>
   </div>`;
   const body = items.map((it, i) => `
-    <div class="acc ${i===0?'open':''}" data-acc="${id}">
+    <div class="acc" data-acc="${id}">
       <div class="acc-head" onclick="accToggle(this)">
         <span class="acc-num">${i+1}</span>
         <span class="acc-title">${it.title}</span>
