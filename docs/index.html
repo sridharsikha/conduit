@@ -236,7 +236,11 @@ function render(){
 }
 function navigate(id){
   currentTab = id;
-  if (history.replaceState) history.replaceState(null, '', '#' + id);
+  try {
+    if (history.replaceState && location.protocol !== 'about:') {
+      history.replaceState(null, '', '#' + id);
+    }
+  } catch(e) { /* sandboxed iframe: silent no-op */ }
   render();
 }
 window.addEventListener('hashchange', () => {
@@ -244,7 +248,12 @@ window.addEventListener('hashchange', () => {
   if (h && NAV.flatMap(g=>g.items).find(i=>i.id===h)) { currentTab = h; render(); }
 });
 // On load, honor URL hash
-(function(){ const h = location.hash.replace('#',''); if (h && NAV.flatMap(g=>g.items).find(i=>i.id===h)) currentTab = h; })();
+(function(){
+  try {
+    const h = location.hash.replace('#','');
+    if (h && NAV.flatMap(g=>g.items).find(i=>i.id===h)) currentTab = h;
+  } catch(e) { /* sandboxed: ignore */ }
+})();
 
 function renderArch(){
   return `
