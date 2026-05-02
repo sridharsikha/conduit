@@ -110,6 +110,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--dark)}
 const NAV=[
   {group:'Architecture',items:[
     {id:'arch',label:'Overview',fn:'renderArch'},
+    {id:'patterns',label:'The pattern (ISE / Conduit / Ruckus)',fn:'renderPatterns'},
     {id:'confluent',label:'Confluent deep-dive',fn:'renderConfluent'},
   ]},
   {group:'Setup',items:[
@@ -491,6 +492,186 @@ function renderArch(){
 
 <div class="sl">What this is not</div>
 <div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin:0">Not a Terraform wrapper. Not a Kubernetes operator. Not microservices. <strong style="color:var(--dark)">Conduit is a policy decision point with an event stream</strong> \u2014 the same shape as Cisco ISE with pxGrid, applied to cloud-SaaS connectivity instead of network access. Identity, location, infrastructure resolve into a decision; the decision and its outcome publish to topics; everything else subscribes. If you already use Crossplane or Terraform for reconciliation, Conduit delegates provisioning to them while keeping identity, policy, billing, and lifecycle in one place.</p></div>
+`;}
+
+function renderPatterns(){
+  return `
+<div class="sl">One pattern, three instances</div>
+<div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:0">The same architectural shape recurs across three real systems: <strong style="color:var(--dark)">a policy decision point with three resolution planes feeding a context bus that everything else subscribes to.</strong> Cisco ISE proved the shape at the network access layer (2011 onward, pxGrid 2014). Conduit applies it to cloud-SaaS private connectivity. Ruckus R1 PubSub applies it to MDU and hospitality property events. Different layers of the stack, different protocols, identical platform thesis.</p></div>
+
+<div class="sl">Side by side</div>
+<div class="card" style="padding:8px;overflow-x:auto">
+<svg width="100%" viewBox="0 0 1080 460" style="display:block">
+<defs><marker id="arpat" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+<rect x="10" y="20" width="340" height="420" rx="10" fill="#FEF2F2" stroke="#DC2626" stroke-width="0.5"/>
+<text x="180" y="42" text-anchor="middle" style="font-family:var(--font);font-size:13px;font-weight:700;fill:#991B1B">CISCO ISE / pxGrid</text>
+<text x="180" y="58" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#991B1B">network access layer \u00b7 2011\u2013</text>
+<rect x="22" y="76" width="316" height="36" rx="6" fill="#fff" stroke="#DC2626" stroke-width="0.5"/>
+<text x="180" y="93" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#991B1B">Producers</text>
+<text x="180" y="106" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#991B1B">switches \u00b7 APs \u00b7 AnyConnect \u00b7 profiling sensors</text>
+<rect x="22" y="120" width="100" height="44" rx="6" fill="#FFE4E6" stroke="#991B1B" stroke-width="0.5"/>
+<text x="72" y="138" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#991B1B">Identity</text>
+<text x="72" y="151" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#991B1B">AD / LDAP</text>
+<text x="72" y="160" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#991B1B">user / device</text>
+<rect x="130" y="120" width="100" height="44" rx="6" fill="#FFE4E6" stroke="#991B1B" stroke-width="0.5"/>
+<text x="180" y="138" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#991B1B">Posture</text>
+<text x="180" y="151" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#991B1B">AnyConnect</text>
+<text x="180" y="160" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#991B1B">compliance</text>
+<rect x="238" y="120" width="100" height="44" rx="6" fill="#FFE4E6" stroke="#991B1B" stroke-width="0.5"/>
+<text x="288" y="138" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#991B1B">Profiling</text>
+<text x="288" y="151" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#991B1B">device class</text>
+<text x="288" y="160" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#991B1B">passive id</text>
+<rect x="22" y="174" width="316" height="44" rx="6" fill="#FECACA" stroke="#991B1B" stroke-width="1"/>
+<text x="180" y="193" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:700;fill:#7F1D1D">ISE policy decision point</text>
+<text x="180" y="207" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#991B1B">authorize \u2192 dACL / VLAN / SGT \u00b7 RADIUS CoA</text>
+<rect x="22" y="226" width="316" height="44" rx="6" fill="#FFE4E6" stroke="#991B1B" stroke-width="1" stroke-dasharray="4 2"/>
+<text x="180" y="245" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:700;fill:#7F1D1D">pxGrid context bus</text>
+<text x="180" y="259" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#991B1B">XMPP \u00b7 publish-subscribe \u00b7 named topics</text>
+<text x="22" y="285" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#991B1B">Subscribers</text>
+<rect x="22" y="293" width="100" height="36" rx="6" fill="#fff" stroke="#991B1B" stroke-width="0.5"/>
+<text x="72" y="310" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:500;fill:#991B1B">Stealthwatch</text>
+<text x="72" y="321" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#991B1B">flow + identity</text>
+<rect x="130" y="293" width="100" height="36" rx="6" fill="#fff" stroke="#991B1B" stroke-width="0.5"/>
+<text x="180" y="310" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:500;fill:#991B1B">Firepower</text>
+<text x="180" y="321" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#991B1B">FW + identity</text>
+<rect x="238" y="293" width="100" height="36" rx="6" fill="#fff" stroke="#991B1B" stroke-width="0.5"/>
+<text x="288" y="310" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:500;fill:#991B1B">SIEM</text>
+<text x="288" y="321" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#991B1B">audit</text>
+<rect x="22" y="333" width="316" height="32" rx="6" fill="#fff" stroke="#991B1B" stroke-width="0.5"/>
+<text x="180" y="350" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:500;fill:#991B1B">+ partner ecosystem (40+ pxGrid integrations)</text>
+<rect x="22" y="376" width="316" height="56" rx="6" fill="#fff" stroke="#991B1B" stroke-width="0.5"/>
+<text x="32" y="393" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#7F1D1D">The platform move:</text>
+<text x="32" y="408" style="font-family:var(--font);font-size:9px;fill:#991B1B">Authentication is the feature.</text>
+<text x="32" y="420" style="font-family:var(--font);font-size:9px;fill:#991B1B">The context graph (pxGrid) is the platform.</text>
+<line x1="180" y1="112" x2="180" y2="118" stroke="#991B1B" stroke-width="1" marker-end="url(#arpat)"/>
+<line x1="180" y1="218" x2="180" y2="224" stroke="#991B1B" stroke-width="1" marker-end="url(#arpat)"/>
+<line x1="180" y1="270" x2="180" y2="291" stroke="#991B1B" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arpat)"/>
+
+<rect x="370" y="20" width="340" height="420" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="540" y="42" text-anchor="middle" style="font-family:var(--font);font-size:13px;font-weight:700;fill:#3C3489">CONDUIT</text>
+<text x="540" y="58" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#534AB7">cloud-SaaS connectivity layer</text>
+<rect x="382" y="76" width="316" height="36" rx="6" fill="#fff" stroke="#534AB7" stroke-width="0.5"/>
+<text x="540" y="93" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#3C3489">Producers</text>
+<text x="540" y="106" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#534AB7">developer requests \u00b7 preflight cron \u00b7 lifecycle</text>
+<rect x="382" y="120" width="100" height="44" rx="6" fill="#F5F3FF" stroke="#5B21B6" stroke-width="0.5"/>
+<text x="432" y="138" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#3C3489">Identity</text>
+<text x="432" y="151" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#534AB7">SSO group</text>
+<text x="432" y="160" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#534AB7">team + CC</text>
+<rect x="490" y="120" width="100" height="44" rx="6" fill="#F5F3FF" stroke="#5B21B6" stroke-width="0.5"/>
+<text x="540" y="138" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#3C3489">Location</text>
+<text x="540" y="151" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#534AB7">service \u2192 CSP</text>
+<text x="540" y="160" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#534AB7">region, cluster</text>
+<rect x="598" y="120" width="100" height="44" rx="6" fill="#F5F3FF" stroke="#5B21B6" stroke-width="0.5"/>
+<text x="648" y="138" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#3C3489">Infra</text>
+<text x="648" y="151" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#534AB7">Day 0 config</text>
+<text x="648" y="160" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#534AB7">VPC, IAM, SG</text>
+<rect x="382" y="174" width="316" height="44" rx="6" fill="#DDD6FE" stroke="#5B21B6" stroke-width="1"/>
+<text x="540" y="193" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:700;fill:#3C3489">Conduit policy decision point</text>
+<text x="540" y="207" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#534AB7">resolve \u2192 PrivateLink / Peering / TGW / PNI</text>
+<rect x="382" y="226" width="316" height="44" rx="6" fill="#F5F3FF" stroke="#5B21B6" stroke-width="1" stroke-dasharray="4 2"/>
+<text x="540" y="245" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:700;fill:#3C3489">Confluent / Kafka context bus</text>
+<text x="540" y="259" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#534AB7">conduit.connections.* \u00b7 preflight.* \u00b7 lifecycle.*</text>
+<text x="382" y="285" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#3C3489">Subscribers</text>
+<rect x="382" y="293" width="100" height="36" rx="6" fill="#fff" stroke="#5B21B6" stroke-width="0.5"/>
+<text x="432" y="310" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:500;fill:#3C3489">Billing / FinOps</text>
+<text x="432" y="321" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#534AB7">chargeback</text>
+<rect x="490" y="293" width="100" height="36" rx="6" fill="#fff" stroke="#5B21B6" stroke-width="0.5"/>
+<text x="540" y="310" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:500;fill:#3C3489">SNOW CMDB</text>
+<text x="540" y="321" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#534AB7">CI lifecycle</text>
+<rect x="598" y="293" width="100" height="36" rx="6" fill="#fff" stroke="#5B21B6" stroke-width="0.5"/>
+<text x="648" y="310" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:500;fill:#3C3489">SIEM \u00b7 DD</text>
+<text x="648" y="321" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#534AB7">audit + ops</text>
+<rect x="382" y="333" width="316" height="32" rx="6" fill="#fff" stroke="#5B21B6" stroke-width="0.5"/>
+<text x="540" y="350" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:500;fill:#3C3489">+ customer's own pipelines (Datadog, Splunk)</text>
+<rect x="382" y="376" width="316" height="56" rx="6" fill="#fff" stroke="#5B21B6" stroke-width="0.5"/>
+<text x="392" y="393" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#3C3489">The platform move:</text>
+<text x="392" y="408" style="font-family:var(--font);font-size:9px;fill:#534AB7">Provisioning a private endpoint is the feature.</text>
+<text x="392" y="420" style="font-family:var(--font);font-size:9px;fill:#534AB7">The connection event stream is the platform.</text>
+<line x1="540" y1="112" x2="540" y2="118" stroke="#5B21B6" stroke-width="1" marker-end="url(#arpat)"/>
+<line x1="540" y1="218" x2="540" y2="224" stroke="#5B21B6" stroke-width="1" marker-end="url(#arpat)"/>
+<line x1="540" y1="270" x2="540" y2="291" stroke="#5B21B6" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arpat)"/>
+
+<rect x="730" y="20" width="340" height="420" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/>
+<text x="900" y="42" text-anchor="middle" style="font-family:var(--font);font-size:13px;font-weight:700;fill:#0F766E">RUCKUS R1 PUBSUB</text>
+<text x="900" y="58" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#0F766E">MDU + hospitality property layer</text>
+<rect x="742" y="76" width="316" height="36" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="900" y="93" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">Producers</text>
+<text x="900" y="106" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#0F766E">PMS \u00b7 IoT devices \u00b7 APs / switches</text>
+<rect x="742" y="120" width="100" height="44" rx="6" fill="#CCFBF1" stroke="#0F766E" stroke-width="0.5"/>
+<text x="792" y="138" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#0F766E">Identity</text>
+<text x="792" y="151" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#0F766E">SPIFFE/SPIRE</text>
+<text x="792" y="160" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#0F766E">SVID per agent</text>
+<rect x="850" y="120" width="100" height="44" rx="6" fill="#CCFBF1" stroke="#0F766E" stroke-width="0.5"/>
+<text x="900" y="138" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#0F766E">Posture</text>
+<text x="900" y="151" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#0F766E">WAL-3 attestation</text>
+<text x="900" y="160" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#0F766E">6-property check</text>
+<rect x="958" y="120" width="100" height="44" rx="6" fill="#CCFBF1" stroke="#0F766E" stroke-width="0.5"/>
+<text x="1008" y="138" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#0F766E">Schema</text>
+<text x="1008" y="151" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#0F766E">AsyncAPI</text>
+<text x="1008" y="160" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#0F766E">CloudEvents</text>
+<rect x="742" y="174" width="316" height="44" rx="6" fill="#A7F3D0" stroke="#0F766E" stroke-width="1"/>
+<text x="900" y="193" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:700;fill:#064E3B">R1 admission decision point</text>
+<text x="900" y="207" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#0F766E">authorize \u2192 topic ACL \u00b7 mTLS \u00b7 marketplace install</text>
+<rect x="742" y="226" width="316" height="44" rx="6" fill="#CCFBF1" stroke="#0F766E" stroke-width="1" stroke-dasharray="4 2"/>
+<text x="900" y="241" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:700;fill:#064E3B">Two-plane bus</text>
+<text x="900" y="255" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#0F766E">cloud: NATS JetStream \u00b7 edge: MQTT 5</text>
+<text x="900" y="266" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#0F766E">leaf-node bridge \u00b7 offline-tolerant</text>
+<text x="742" y="285" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#0F766E">Subscribers</text>
+<rect x="742" y="293" width="100" height="36" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="792" y="310" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:500;fill:#0F766E">ButterflyMX</text>
+<text x="792" y="321" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#0F766E">access events</text>
+<rect x="850" y="293" width="100" height="36" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="900" y="310" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:500;fill:#0F766E">Hapi</text>
+<text x="900" y="321" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#0F766E">PMS hub</text>
+<rect x="958" y="293" width="100" height="36" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="1008" y="310" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:500;fill:#0F766E">Operator UI</text>
+<text x="1008" y="321" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#0F766E">audit + dash</text>
+<rect x="742" y="333" width="316" height="32" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="900" y="350" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:500;fill:#0F766E">+ marketplace partners (locks, BAS, cameras, voice)</text>
+<rect x="742" y="376" width="316" height="56" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="752" y="393" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#064E3B">The platform move:</text>
+<text x="752" y="408" style="font-family:var(--font);font-size:9px;fill:#0F766E">An MDU integration is the feature.</text>
+<text x="752" y="420" style="font-family:var(--font);font-size:9px;fill:#0F766E">M+N collapse of N\u00d7M spaghetti is the platform.</text>
+<line x1="900" y1="112" x2="900" y2="118" stroke="#0F766E" stroke-width="1" marker-end="url(#arpat)"/>
+<line x1="900" y1="218" x2="900" y2="224" stroke="#0F766E" stroke-width="1" marker-end="url(#arpat)"/>
+<line x1="900" y1="270" x2="900" y2="291" stroke="#0F766E" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arpat)"/>
+</svg>
+</div>
+<p style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.7"><strong style="color:var(--dark)">Reading top to bottom:</strong> Producers feed three resolution planes (identity / posture-or-location / profiling-or-infra). The decision point combines them into a policy outcome. The outcome and its context publish to a pub/sub bus. Subscribers read what they need. Each system is a different layer of the stack, but the architectural shape is identical.</p>
+
+<div class="sl">Component-by-component mapping</div>
+<table class="tbl">
+<tr><th>Layer</th><th>Cisco ISE / pxGrid</th><th>Conduit</th><th>Ruckus R1 PubSub</th></tr>
+<tr><td><strong>What it gates</strong></td><td>Network access</td><td>Cloud-SaaS connectivity</td><td>Property-edge integrations</td></tr>
+<tr><td><strong>Identity plane</strong></td><td>AD / LDAP \u2192 user, device</td><td>SSO/IdP \u2192 team, cost center</td><td>SPIFFE/SPIRE \u2192 workload SVID</td></tr>
+<tr><td><strong>Second plane</strong></td><td>Posture (AnyConnect)</td><td>Location (service registry)</td><td>Posture (WAL-3 attestation)</td></tr>
+<tr><td><strong>Third plane</strong></td><td>Profiling (passive id)</td><td>Infrastructure (Day 0 config)</td><td>Schema (AsyncAPI / CloudEvents)</td></tr>
+<tr><td><strong>Decision output</strong></td><td>dACL / VLAN / SGT</td><td>PrivateLink / Peering / TGW / PNI</td><td>Topic ACL / mTLS cert / marketplace install</td></tr>
+<tr><td><strong>Bus protocol</strong></td><td>XMPP (pxGrid 1) \u2192 STOMP (pxGrid 2)</td><td>Kafka / Confluent</td><td>NATS JetStream (cloud) + MQTT 5 (edge)</td></tr>
+<tr><td><strong>Topic family</strong></td><td>SessionDirectory, TrustSecMetadata, EndpointProfile</td><td>conduit.connections.*, preflight.*, lifecycle.*</td><td>r1.access.*, r1.pms.*, r1.iot.*</td></tr>
+<tr><td><strong>Reconciliation</strong></td><td>RADIUS CoA</td><td>preflight cron \u2192 SNOW INC</td><td>NATS leaf reconnect + replay</td></tr>
+<tr><td><strong>Subscribers</strong></td><td>Stealthwatch, Firepower, SIEM, partners (40+)</td><td>Billing, CMDB, Datadog, SIEM, customer</td><td>BMx, Hapi, marketplace, operator UI</td></tr>
+<tr><td><strong>Audit / replay</strong></td><td>ISE log API + pxGrid history</td><td>90d topic retention + Tableflow \u2192 Iceberg</td><td>NATS retention + JetStream stream replay</td></tr>
+<tr><td><strong>What's the moat</strong></td><td>Context graph (not RADIUS)</td><td>Event stream (not provisioning)</td><td>Marketplace + identity (not protocol)</td></tr>
+</table>
+
+<div class="sl">What changed between ISE and the modern instances</div>
+<table class="tbl">
+<tr><th>Dimension</th><th>ISE / pxGrid (2011\u20132014)</th><th>Conduit / Ruckus (2026\u2013)</th></tr>
+<tr><td><strong>Bus technology</strong></td><td>XMPP \u2014 chosen because it was a standards-track pub/sub at the time</td><td>Kafka or NATS \u2014 retention, replay, schema registry, native cloud</td></tr>
+<tr><td><strong>Identity</strong></td><td>AD / LDAP integration with custom attribute mapping</td><td>SSO/JWT and SPIFFE/SPIRE \u2014 workload identity is first-class</td></tr>
+<tr><td><strong>Schema</strong></td><td>Cisco-defined topics; partner integration was a Cisco-engineering project</td><td>Open envelope (CloudEvents, AsyncAPI), self-serve partner onboarding</td></tr>
+<tr><td><strong>Subscribers</strong></td><td>Closed Cisco ecosystem early (pxGrid 1); opened with pxGrid 2</td><td>Open from day one \u2014 customer brings their own Datadog/Splunk/etc</td></tr>
+<tr><td><strong>Audit warehouse</strong></td><td>Custom ISE log export + ETL to Splunk</td><td>Tableflow \u2192 Iceberg / Delta in customer storage \u2014 free analytical surface</td></tr>
+<tr><td><strong>Multi-tenancy</strong></td><td>One ISE deployment per organization</td><td>SSO group as tenant key \u2014 one platform serves every team</td></tr>
+</table>
+
+<div class="sl">The cautionary note \u2014 SecureX</div>
+<div class="alert alert-warn"><strong>SecureX</strong> was Cisco's attempt to build a higher-order platform on top of ISE / AMP / Stealthwatch context, and it failed because there was no P&L sponsor and the integration model stayed closed. <strong style="color:var(--dark)">The lesson:</strong> the platform value lives in the bus, not in the dashboard. Build the primitives so cleanly that any team can subscribe and build their own view, instead of trying to ship the one true console. Both Conduit and R1 PubSub are designed with that lesson baked in \u2014 the dashboards in this portal are subscribers to the same stream the customer's own systems can subscribe to, not a closed UI that customers have to live inside.</div>
+
+<div class="sl">Why this matters</div>
+<div class="card" style="border-left:3px solid var(--accent)"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin:0"><strong style="color:var(--dark)">The pattern is the portfolio.</strong> Networking-PM candidates can argue for a feature. Platform PMs see a recurring shape and design for it. Three real systems built on the same architectural primitive \u2014 ISE/pxGrid (proven at scale, 15 years of evidence), Conduit (cloud connectivity, this portal), Ruckus R1 PubSub (property events, six-slide deck) \u2014 is harder to argue with than any single instance, because it makes the case that the pattern itself is the product, not the specific implementation.</p></div>
 `;}
 
 function renderUserFlows(){
