@@ -129,6 +129,7 @@ const NAV=[
     {id:'dr',label:'DR + Cluster Linking',fn:'renderDR'},
     {id:'dns',label:'DNS resolution',fn:'renderDNS'},
     {id:'rfc1918',label:'RFC1918 pool',fn:'renderRFC1918'},
+    {id:'events',label:'Event stream',fn:'renderEvents'},
     {id:'approval',label:'Approval flow',fn:'renderApproval'},
     {id:'lifecycle',label:'Lifecycle',fn:'renderLifecycle'},
   ]},
@@ -414,8 +415,82 @@ function renderArch(){
 <tr><td><strong>Infrastructure</strong></td><td>Day 0 config registry</td><td>VPC, subnets, IAM role, security group</td><td>Platform eng</td></tr>
 </table>
 
+<div class="sl">Conduit on Confluent \u2014 the architecture choice</div>
+<div class="card" style="padding:8px;overflow-x:auto">
+<svg width="100%" viewBox="0 0 700 380" style="display:block">
+<defs><marker id="arpx" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="20" y="30" width="180" height="270" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="110" y="50" text-anchor="middle" style="font-family:var(--font);font-size:12px;font-weight:600;fill:#3C3489">CONDUIT (producer)</text>
+<text x="110" y="66" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#534AB7">emits state changes</text>
+<rect x="35" y="80" width="150" height="38" rx="6" fill="#fff" stroke="#534AB7" stroke-width="0.5"/>
+<text x="45" y="98" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#3C3489">requested</text>
+<text x="45" y="111" style="font-family:var(--font);font-size:9px;fill:#534AB7">developer hits API</text>
+<rect x="35" y="124" width="150" height="38" rx="6" fill="#fff" stroke="#534AB7" stroke-width="0.5"/>
+<text x="45" y="142" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#3C3489">approved</text>
+<text x="45" y="155" style="font-family:var(--font);font-size:9px;fill:#534AB7">policy auto / SNOW</text>
+<rect x="35" y="168" width="150" height="38" rx="6" fill="#fff" stroke="#534AB7" stroke-width="0.5"/>
+<text x="45" y="186" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#3C3489">provisioned</text>
+<text x="45" y="199" style="font-family:var(--font);font-size:9px;fill:#534AB7">CSP API succeeded</text>
+<rect x="35" y="212" width="150" height="38" rx="6" fill="#fff" stroke="#534AB7" stroke-width="0.5"/>
+<text x="45" y="230" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#3C3489">drift_detected</text>
+<text x="45" y="243" style="font-family:var(--font);font-size:9px;fill:#534AB7">preflight cron</text>
+<rect x="35" y="256" width="150" height="38" rx="6" fill="#fff" stroke="#534AB7" stroke-width="0.5"/>
+<text x="45" y="274" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#3C3489">hibernated / deleted</text>
+<text x="45" y="287" style="font-family:var(--font);font-size:9px;fill:#534AB7">lifecycle action</text>
+<rect x="240" y="30" width="220" height="270" rx="10" fill="#EFF6FF" stroke="#172554" stroke-width="0.5"/>
+<text x="350" y="50" text-anchor="middle" style="font-family:var(--font);font-size:12px;font-weight:600;fill:#172554">CONFLUENT (event bus)</text>
+<text x="350" y="66" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#172554">topics + retention + replay</text>
+<rect x="255" y="80" width="190" height="32" rx="6" fill="#fff" stroke="#172554" stroke-width="0.5"/>
+<text x="265" y="98" class="mono" style="font-family:var(--mono);font-size:10px;font-weight:600;fill:#172554">conduit.connections.requested</text>
+<text x="265" y="108" style="font-family:var(--font);font-size:9px;fill:#1E40AF">7d retention</text>
+<rect x="255" y="118" width="190" height="32" rx="6" fill="#fff" stroke="#172554" stroke-width="0.5"/>
+<text x="265" y="136" class="mono" style="font-family:var(--mono);font-size:10px;font-weight:600;fill:#172554">conduit.connections.approved</text>
+<text x="265" y="146" style="font-family:var(--font);font-size:9px;fill:#1E40AF">90d retention (audit)</text>
+<rect x="255" y="156" width="190" height="32" rx="6" fill="#fff" stroke="#172554" stroke-width="0.5"/>
+<text x="265" y="174" class="mono" style="font-family:var(--mono);font-size:10px;font-weight:600;fill:#172554">conduit.connections.provisioned</text>
+<text x="265" y="184" style="font-family:var(--font);font-size:9px;fill:#1E40AF">90d retention (CMDB sync)</text>
+<rect x="255" y="194" width="190" height="32" rx="6" fill="#fff" stroke="#172554" stroke-width="0.5"/>
+<text x="265" y="212" class="mono" style="font-family:var(--mono);font-size:10px;font-weight:600;fill:#172554">conduit.preflight.drift</text>
+<text x="265" y="222" style="font-family:var(--font);font-size:9px;fill:#1E40AF">30d retention</text>
+<rect x="255" y="232" width="190" height="32" rx="6" fill="#fff" stroke="#172554" stroke-width="0.5"/>
+<text x="265" y="250" class="mono" style="font-family:var(--mono);font-size:10px;font-weight:600;fill:#172554">conduit.lifecycle.state</text>
+<text x="265" y="260" style="font-family:var(--font);font-size:9px;fill:#1E40AF">7d retention</text>
+<rect x="255" y="270" width="190" height="24" rx="6" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text x="350" y="285" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:500;fill:#633806">+ Tableflow \u2192 audit warehouse</text>
+<rect x="500" y="30" width="180" height="270" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/>
+<text x="590" y="50" text-anchor="middle" style="font-family:var(--font);font-size:12px;font-weight:600;fill:#0F766E">SUBSCRIBERS</text>
+<text x="590" y="66" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#0F766E">consume what they need</text>
+<rect x="515" y="80" width="150" height="32" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="525" y="100" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">Billing / FinOps</text>
+<rect x="515" y="118" width="150" height="32" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="525" y="138" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">SNOW CMDB sync</text>
+<rect x="515" y="156" width="150" height="32" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="525" y="176" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">Datadog / Splunk</text>
+<rect x="515" y="194" width="150" height="32" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="525" y="214" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">Capacity planning</text>
+<rect x="515" y="232" width="150" height="32" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="525" y="252" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">SIEM / audit</text>
+<rect x="515" y="270" width="150" height="24" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="590" y="285" text-anchor="middle" style="font-family:var(--font);font-size:10px;font-weight:500;fill:#0F766E">+ customer's own pipelines</text>
+<line x1="186" y1="98" x2="253" y2="96" stroke="#534AB7" stroke-width="1" marker-end="url(#arpx)"/>
+<line x1="186" y1="142" x2="253" y2="134" stroke="#534AB7" stroke-width="1" marker-end="url(#arpx)"/>
+<line x1="186" y1="186" x2="253" y2="172" stroke="#534AB7" stroke-width="1" marker-end="url(#arpx)"/>
+<line x1="186" y1="230" x2="253" y2="210" stroke="#534AB7" stroke-width="1" marker-end="url(#arpx)"/>
+<line x1="186" y1="274" x2="253" y2="248" stroke="#534AB7" stroke-width="1" marker-end="url(#arpx)"/>
+<line x1="446" y1="96" x2="513" y2="96" stroke="#0F766E" stroke-width="1" marker-end="url(#arpx)"/>
+<line x1="446" y1="172" x2="513" y2="134" stroke="#0F766E" stroke-width="1" marker-end="url(#arpx)"/>
+<line x1="446" y1="172" x2="513" y2="172" stroke="#0F766E" stroke-width="1" marker-end="url(#arpx)"/>
+<line x1="446" y1="210" x2="513" y2="210" stroke="#0F766E" stroke-width="1" marker-end="url(#arpx)"/>
+<line x1="446" y1="134" x2="513" y2="248" stroke="#0F766E" stroke-width="1" marker-end="url(#arpx)"/>
+<text x="350" y="328" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#534AB7">The same primitives Conduit orchestrates for customers</text>
+<text x="350" y="344" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#534AB7">also power its own observability.</text>
+<text x="350" y="362" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#5F5E5A">Producers \u2192 topics \u2192 fan-out subscribers. Replay built in. Audit warehouse via Tableflow.</text>
+</svg>
+</div>
+<div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin:0"><strong style="color:var(--dark)">Why this isn't dogfood theatre.</strong> Conduit needs an event stream \u2014 every state change has to be observable, replayable, and consumable by adjacent systems (billing, ITSM, SIEM, FinOps). The two real options are: build a custom message bus, or use Kafka. Kafka wins because the subscribers already speak it, retention and replay are solved, and Tableflow gives you the audit warehouse for free. This is the architecture decision that aligns Conduit's design with the platform it orchestrates.</p></div>
+
 <div class="sl">What this is not</div>
-<div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin:0">Not a Terraform wrapper (no HCL files for developers). Not a Kubernetes operator (calls CSP APIs directly). Not microservices (single Python process). Conduit is the orchestration layer above any of those \u2014 if you already use Crossplane or Terraform for reconciliation, Conduit delegates provisioning to them while keeping identity, policy, billing, and lifecycle in one place.</p></div>
+<div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin:0">Not a Terraform wrapper. Not a Kubernetes operator. Not microservices. <strong style="color:var(--dark)">Conduit is a policy decision point with an event stream</strong> \u2014 the same shape as Cisco ISE with pxGrid, applied to cloud-SaaS connectivity instead of network access. Identity, location, infrastructure resolve into a decision; the decision and its outcome publish to topics; everything else subscribes. If you already use Crossplane or Terraform for reconciliation, Conduit delegates provisioning to them while keeping identity, policy, billing, and lifecycle in one place.</p></div>
 `;}
 
 function renderUserFlows(){
@@ -771,6 +846,89 @@ function renderRFC1918(){
 <tr><td>dev</td><td class="mono">10.32.0.0/12</td><td>/20 each</td><td>4096 dev sandboxes (current: 47)</td></tr>
 <tr><td>shared services</td><td class="mono">10.255.0.0/16</td><td>/16 single</td><td>1 hub VPC (current: 1)</td></tr>
 </table>
+`;}
+
+function renderEvents(){
+  // Synthetic recent event stream — last 30 minutes
+  const events = [
+    {t:'14:23:47', topic:'conduit.connections.requested', team:'Commerce', svc:'order-svc', env:'prod', csp:'aws', region:'us-east-1', sev:'info'},
+    {t:'14:23:48', topic:'conduit.connections.approved', team:'Commerce', svc:'order-svc', env:'prod', csp:'aws', region:'us-east-1', sev:'info', meta:'auto (under threshold)'},
+    {t:'14:23:53', topic:'conduit.connections.provisioned', team:'Commerce', svc:'order-svc', env:'prod', csp:'aws', region:'us-east-1', sev:'ok', meta:'vpce-0a3c \u00b7 6.1s'},
+    {t:'14:21:15', topic:'conduit.preflight.drift', team:'ML Platform', svc:'fraud-detect', env:'prod', csp:'azure', region:'westeurope', sev:'warn', meta:'SG missing 9092 rule'},
+    {t:'14:18:02', topic:'conduit.connections.requested', team:'Data', svc:'analytics-worker', env:'perf', csp:'gcp', region:'europe-west1', sev:'info'},
+    {t:'14:18:03', topic:'conduit.connections.approved', team:'Data', svc:'analytics-worker', env:'perf', csp:'gcp', region:'europe-west1', sev:'info', meta:'auto'},
+    {t:'14:18:11', topic:'conduit.connections.provisioned', team:'Data', svc:'analytics-worker', env:'perf', csp:'gcp', region:'europe-west1', sev:'ok', meta:'psc-anal-eurw1 \u00b7 8.2s'},
+    {t:'14:14:30', topic:'conduit.lifecycle.state', team:'Commerce', svc:'audit-export', env:'dev', csp:'aws', region:'us-east-1', sev:'info', meta:'idle 4h \u2192 hibernated'},
+    {t:'14:08:17', topic:'conduit.connections.requested', team:'ML Platform', svc:'ml-pipeline', env:'prod', csp:'aws', region:'us-west-2', sev:'info'},
+    {t:'14:08:19', topic:'conduit.connections.approved', team:'ML Platform', svc:'ml-pipeline', env:'prod', csp:'aws', region:'us-west-2', sev:'warn', meta:'SNOW RITM0042401'},
+    {t:'14:02:44', topic:'conduit.preflight.drift', team:'Commerce', svc:'payment-svc', env:'prod', csp:'aws', region:'us-east-1', sev:'warn', meta:'IAM role drift \u2014 trust policy modified'},
+    {t:'13:58:09', topic:'conduit.connections.deleted', team:'Data', svc:'old-etl', env:'dev', csp:'gcp', region:'us-central1', sev:'info', meta:'manual delete via portal'},
+  ];
+
+  const topics = [
+    {name:'conduit.connections.requested', retention:'7d', partitions:6, keyBy:'team', producers:'Conduit API', consumers:'capacity-forecast \u00b7 service-velocity'},
+    {name:'conduit.connections.approved', retention:'90d', partitions:6, keyBy:'team', producers:'policy-engine', consumers:'audit \u00b7 SIEM \u00b7 SNOW'},
+    {name:'conduit.connections.provisioned', retention:'90d', partitions:12, keyBy:'connection_id', producers:'CSP provisioner workers', consumers:'CMDB \u00b7 billing \u00b7 metrics \u00b7 customer subscribers'},
+    {name:'conduit.connections.deleted', retention:'90d', partitions:6, keyBy:'connection_id', producers:'lifecycle \u00b7 portal', consumers:'CMDB \u00b7 billing \u00b7 audit'},
+    {name:'conduit.preflight.drift', retention:'30d', partitions:3, keyBy:'connection_id', producers:'preflight cron', consumers:'SNOW \u00b7 portal alerts \u00b7 PagerDuty'},
+    {name:'conduit.lifecycle.state', retention:'7d', partitions:6, keyBy:'connection_id', producers:'lifecycle scheduler', consumers:'cost-optimizer \u00b7 portal'},
+    {name:'conduit.metering.usage', retention:'90d', partitions:24, keyBy:'connection_id', producers:'CSP flow logs', consumers:'billing \u00b7 chargeback'},
+  ];
+
+  const sevColor = (s) => s==='ok'?'var(--green)':s==='warn'?'var(--amber)':s==='err'?'var(--red)':'var(--accent)';
+  const sevBg = (s) => s==='ok'?'var(--green-light)':s==='warn'?'var(--amber-light)':s==='err'?'var(--red-light)':'var(--accent-light)';
+
+  return `
+<div class="sl">Event stream \u2014 Conduit's pxGrid</div>
+<div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:0">Every state change in Conduit publishes to a Kafka topic. Subscribers consume what they need. The dashboards in this portal aren't separate ETL \u2014 they're subscribers to the same stream the customer's billing, SNOW, and SIEM systems can subscribe to. Replay is free; audit lineage is free.</p></div>
+
+<div class="metrics">
+<div class="metric"><div class="label">Events (last 24h)</div><div class="val">14,287</div><div class="sub">avg 595/hr \u00b7 peak 1,820/hr</div></div>
+<div class="metric"><div class="label">Active topics</div><div class="val">${topics.length}</div><div class="sub">connections \u00b7 preflight \u00b7 lifecycle \u00b7 metering</div></div>
+<div class="metric"><div class="label">Subscribers</div><div class="val">11</div><div class="sub">5 internal \u00b7 6 customer-side</div></div>
+<div class="metric"><div class="label">Replay window</div><div class="val">90d</div><div class="sub">approved + provisioned topics</div></div>
+</div>
+
+<div class="sl">Live tail \u2014 last 30 min</div>
+<div class="card" style="padding:0;overflow:hidden">
+<div style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:8px 14px;border-bottom:1px solid var(--border);color:var(--muted)">timestamp <span style="margin-left:64px">topic</span><span style="margin-left:170px">team \u2192 service \u00b7 env \u00b7 region</span><span style="float:right">meta</span></div>
+${events.map(e=>`<div style="display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;background:${sevBg(e.sev)}30">
+<span style="color:var(--muted);min-width:60px">${e.t}</span>
+<span class="badge-sm" style="background:${sevColor(e.sev)}25;color:${sevColor(e.sev)};min-width:200px;font-family:var(--mono);font-weight:500">${e.topic}</span>
+<span style="flex:1;color:var(--dark)"><strong>${e.team}</strong> \u2192 ${e.svc} \u00b7 ${e.env} \u00b7 ${cspBadge(e.csp)} ${e.region}</span>
+<span style="color:var(--muted);font-size:10px;text-align:right;max-width:280px">${e.meta||''}</span>
+</div>`).join('')}
+</div>
+
+<div class="sl">Topic catalog</div>
+<table class="tbl">
+<tr><th>Topic</th><th>Retention</th><th>Partitions</th><th>Keyed by</th><th>Producers</th><th>Consumers</th></tr>
+${topics.map(t=>`<tr>
+<td class="mono" style="font-size:11px;font-weight:600">${t.name}</td>
+<td>${t.retention}</td>
+<td>${t.partitions}</td>
+<td class="mono" style="font-size:10px">${t.keyBy}</td>
+<td style="font-size:11px">${t.producers}</td>
+<td style="font-size:11px">${t.consumers}</td>
+</tr>`).join('')}
+</table>
+
+<div class="sl">What customers can subscribe to</div>
+<div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:0">Customer subscriptions are scoped by SSO group on the consumer credential \u2014 a team only sees events about its own connections. Reading the firehose requires a platform-team credential. The same scoping that gates the developer portal gates the event stream, so per-team Datadog or Splunk pipelines stay isolated by default.</p></div>
+
+<table class="tbl">
+<tr><th>Subscriber</th><th>Topics consumed</th><th>Use case</th></tr>
+<tr><td><strong>Billing / FinOps</strong></td><td class="mono" style="font-size:10px">connections.provisioned \u00b7 connections.deleted \u00b7 metering.usage</td><td>Per-team chargeback, showback dashboards</td></tr>
+<tr><td><strong>SNOW CMDB</strong></td><td class="mono" style="font-size:10px">connections.provisioned \u00b7 connections.deleted</td><td>CI lifecycle, change tracking</td></tr>
+<tr><td><strong>SIEM / audit</strong></td><td class="mono" style="font-size:10px">connections.approved \u00b7 connections.provisioned</td><td>Compliance audit trail, 90d retention</td></tr>
+<tr><td><strong>Datadog / Splunk</strong></td><td class="mono" style="font-size:10px">all topics</td><td>Operational dashboards, alerting</td></tr>
+<tr><td><strong>PagerDuty</strong></td><td class="mono" style="font-size:10px">preflight.drift</td><td>On-call wake for IAM/SG drift</td></tr>
+<tr><td><strong>Capacity planner</strong></td><td class="mono" style="font-size:10px">connections.requested \u00b7 connections.provisioned</td><td>CCN headroom forecast (90d)</td></tr>
+<tr><td><strong>Customer's own DD/Splunk</strong></td><td class="mono" style="font-size:10px">scoped to team's SSO group</td><td>Customer subscribes from their existing pipeline</td></tr>
+</table>
+
+<div class="sl">Why this matters</div>
+<div class="card" style="border-left:3px solid var(--accent)"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin:0"><strong style="color:var(--dark)">The pxGrid lesson.</strong> Cisco ISE became valuable not when it added more authentication methods, but when pxGrid made the policy decisions consumable as a stream. The cloud-SaaS connectivity surface is at the same inflection: PrivateLink Gateway, Egress PL, and Cluster Linking are three separate observability problems for the customer today. If they all published to a single event family, customers could subscribe with their existing pipelines instead of building three integrations. That's the platform move on top of any individual connectivity feature.</p></div>
 `;}
 
 function renderConfluent(){
