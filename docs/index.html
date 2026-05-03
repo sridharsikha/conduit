@@ -90,7 +90,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--dark)}
 .cb-bar-wrap{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;margin:0 12px}
 .cb-bar{height:100%;border-radius:4px}
 .approval-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;background:var(--surface)}
-@media(max-width:768px){.flow-step{grid-template-columns:44px 1fr}.flow-side{display:none}.metrics{grid-template-columns:1fr 1fr}}
+.subtab-bar{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0 18px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:8px}
+.subtab{padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);background:transparent;border:none;border-radius:5px;transition:all .12s;font-family:inherit}
+.subtab:hover{background:var(--surface);color:var(--dark)}
+.subtab.active{background:var(--accent);color:#fff;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.subtab-panel{display:none}
+.subtab-panel.active{display:block}
+@media(max-width:768px){.flow-step{grid-template-columns:44px 1fr}.flow-side{display:none}.metrics{grid-template-columns:1fr 1fr}.subtab{padding:6px 10px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -149,11 +155,20 @@ const NAV=[
 let currentTab='arch';
 
 const BUILD={
-  version:'1.3.0',
+  version:'1.4.0',
   date:'2026-05-02',
-  commits:16,
-  label:'v1.3 \u00b7 confluent interview portfolio',
+  commits:17,
+  label:'v1.4 \u00b7 confluent interview portfolio',
   changelog:[
+    {v:'1.4.0',date:'2026-05-02',title:'Confluent topology restructured into sub-tabs',notes:[
+      'Topology tab no longer a 13-section scroll-wall \u2014 organized into 4 sub-tabs at the top',
+      'Sub-tab 1: Layout & access (Tier 1\u20134, cluster matrix, CCN definition)',
+      'Sub-tab 2: Customer pattern (CDC) (CDC diagram + Snowflake/Databricks framing)',
+      'Sub-tab 3: Connect & WarpStream (Connect deep-dive + WarpStream control/data plane diagram)',
+      'Sub-tab 4: Compute (Flink) (fraud detection example + annotations)',
+      'Closing "Confluent \u2260 Cloudflare" callout stays global, below sub-tabs',
+      'New subtabs() / subtabSwitch() helpers + sub-tab CSS \u2014 reusable for other long tabs',
+    ]},
     {v:'1.3.0',date:'2026-05-02',title:'Pricing calculator with sliders',notes:[
       'Live cost calculator in the Admin tab \u2014 sliders for ingest, consumers, retention, Flink CFUs, connectors',
       'Cluster-type and networking-choice toggles (Basic / Standard / Dedicated / Enterprise / Freight \u00b7 Public / Peering / PrivateLink / PNI)',
@@ -407,6 +422,25 @@ function accSet(groupId, open){
   });
 }
 
+// Sub-tabs: horizontal pill bar above panels, click switches active
+function subtabs(tabId, panels) {
+  const bar = `<div class="subtab-bar">${panels.map((p, i) =>
+    `<button class="subtab ${i===0?'active':''}" data-st-bar="${tabId}" data-st-idx="${i}" onclick="subtabSwitch('${tabId}', ${i})">${p.label}</button>`
+  ).join('')}</div>`;
+  const body = panels.map((p, i) =>
+    `<div class="subtab-panel ${i===0?'active':''}" data-st-panel="${tabId}" data-st-idx="${i}">${p.body}</div>`
+  ).join('');
+  return bar + body;
+}
+function subtabSwitch(tabId, idx) {
+  document.querySelectorAll('[data-st-bar="'+tabId+'"]').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.stIdx) === idx);
+  });
+  document.querySelectorAll('[data-st-panel="'+tabId+'"]').forEach(p => {
+    p.classList.toggle('active', parseInt(p.dataset.stIdx) === idx);
+  });
+}
+
 function renderArch(){
   return `
 <div class="sl">The one diagram</div>
@@ -598,7 +632,10 @@ function renderTopology(){
 <div class="sl">Confluent Cloud \u2014 connectivity topology</div>
 <div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:0">Confluent Cloud is a SaaS data-streaming platform that runs <em>inside</em> AWS / Azure / GCP regions. It does <strong style="color:var(--dark)">not</strong> operate its own Equinix POPs or anycast fabric. Customers reach it through CSP-native private networking primitives. The "middle mile" is the cloud provider's backbone, not a Confluent-owned network.</p></div>
 
-<div class="sl">Tier 1 \u2014 customer data sources and sinks</div>
+
+
+${subtabs('topology', [
+  {label:'Layout & access', body:`<div class="sl">Tier 1 \u2014 customer data sources and sinks</div>
 <div class="card" style="padding:8px;overflow-x:auto">
 <svg width="100%" viewBox="0 0 700 220" style="display:block">
 <rect x="20" y="20" width="380" height="180" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/>
@@ -726,7 +763,8 @@ ${accGroup('topology-access', [
 <tr><td><strong>Cluster Linking</strong></td><td>Cross-region / cross-cloud replication. Mirror topics, geo-redundancy, DR. Travels over CSP backbones, not Confluent\'s.</td></tr>
 </table>
 
-<div class="sl">The dominant Confluent customer pattern \u2014 CDC to analytics</div>
+`},
+  {label:'Customer pattern (CDC)', body:`<div class="sl">The dominant Confluent customer pattern \u2014 CDC to analytics</div>
 <div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">Most Confluent revenue comes from one architectural pattern: <strong style="color:var(--dark)">operational databases stream changes through Kafka, get processed by Flink, and land in analytical warehouses for BI and ML.</strong> This is the modern replacement for nightly batch ETL \u2014 instead of "extract overnight, transform in batch, load before morning," changes flow continuously and are queryable seconds after they happen.</p>
 <div style="padding:8px;overflow-x:auto">
 <svg width="100%" viewBox="0 0 920 320" style="display:block">
@@ -797,7 +835,10 @@ ${accGroup('topology-access', [
 <p style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.7"><strong style="color:var(--dark)">Why this matters for the networking PM role:</strong> the source databases, the Kafka cluster, the Flink jobs, and the destination warehouses each live in different VPCs across different cloud providers. Every arrow in the diagram is a private-connectivity decision. PrivateLink to Confluent for Kafka. Egress PrivateLink from Confluent to the customer\'s warehouse. Cluster Linking if cross-region. PNI if at scale. The networking surface is the connective tissue of this entire pattern \u2014 making it work cleanly is the product.</p>
 </div>
 
-<div class="sl">Kafka Connect \u2014 the engine that moves data in and out</div>
+<div class="alert alert-info"><strong>The Snowflake / Databricks question.</strong> Confluent doesn\'t compete with Snowflake or Databricks \u2014 it feeds them. Tableflow materializes Kafka topics directly to Iceberg or Delta Lake files in customer S3, and from there both warehouses read natively (Snowflake via Iceberg Tables, Databricks via Delta). The strategic position is upstream: own the event stream and the bridge to analytics, let the customer pick whichever warehouse they prefer. The actual competition is the CSP-native messaging services (Kinesis, Pub/Sub, Event Hubs) trying to keep customers from leaving the cloud provider for Confluent.</div>
+
+`},
+  {label:'Connect & WarpStream', body:`<div class="sl">Kafka Connect \u2014 the engine that moves data in and out</div>
 <div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">The arrows in the CDC diagram above don\'t move themselves. <strong style="color:var(--dark)">Kafka Connect</strong> is the framework that runs source connectors (database \u2192 Kafka) and sink connectors (Kafka \u2192 warehouse) without writing custom producer or consumer code. The 150+ connector ecosystem \u2014 Postgres, MongoDB, Salesforce, Snowflake, Databricks, S3, Elasticsearch, and dozens more \u2014 is one of Confluent\'s real competitive moats, because building production-grade integration with schema management, error handling, and offset tracking is years of engineering work that Kafka-compatible competitors haven\'t matched.</p>
 <div style="padding:8px;overflow-x:auto">
 <svg width="100%" viewBox="0 0 920 380" style="display:block">
@@ -1016,7 +1057,8 @@ ${accGroup('topology-access', [
 
 <div class="alert alert-info"><strong>The architectural pattern is the SDN move applied to streaming.</strong> Just as OpenFlow separated network intelligence (controller) from packet forwarding (switch ASICs), WarpStream separates Kafka intelligence (control plane) from message forwarding (stateless agents). Same principle. Same benefits: each layer scales independently, evolves independently, and can be owned by different parties. <strong style="color:var(--dark)">For Confluent the strategic move is the trust split</strong> \u2014 customer-private data plane, vendor-managed control plane. This is the architecture that unlocks regulated industries (banking, healthcare, defense), customer-edge deployments, and eventually \u2014 plausibly \u2014 colo / Outpost hosting. The control plane stays in Confluent\'s public regions; the data plane runs wherever the customer wants their data to live.</div>
 
-<div class="sl">A Flink example \u2014 fraud detection in 30 lines</div>
+`},
+  {label:'Compute (Flink)', body:`<div class="sl">A Flink example \u2014 fraud detection in 30 lines</div>
 <div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">To make this concrete: here is a real Flink SQL job that detects credit-card fraud in real time. It reads from a Kafka topic of card transactions, maintains state per card, joins against a customer-profile table, applies a windowed rule, and writes alerts back to Kafka. This is a load-bearing example of what "stream processing" actually means.</p>
 <div class="card" style="margin:0;padding:14px;background:#1e293b;border:1px solid #334155;font-family:var(--mono);font-size:11px;line-height:1.6;color:#e2e8f0;overflow-x:auto"><pre style="margin:0;color:#e2e8f0">-- 1. Define the source: Kafka topic of transactions
 CREATE TABLE transactions (
@@ -1067,9 +1109,11 @@ HAVING COUNT(DISTINCT country) &gt; 1;</pre></div>
 <p style="font-size:12px;color:var(--muted);margin-top:14px;line-height:1.7"><strong style="color:var(--dark)">The point of the example:</strong> none of this is possible with vanilla Kafka consumers. Maintaining keyed state, watermarks, windowing, exactly-once semantics, distributed checkpointing, recovery on failure \u2014 all of it requires a real stream processing engine. Confluent\'s Flink acquisition (Immerok, January 2023) is what makes this a managed-service experience instead of "go run your own Flink cluster on Kubernetes."</p>
 </div>
 
-<div class="alert alert-info"><strong>The Snowflake / Databricks question.</strong> Confluent doesn\'t compete with Snowflake or Databricks \u2014 it feeds them. Tableflow materializes Kafka topics directly to Iceberg or Delta Lake files in customer S3, and from there both warehouses read natively (Snowflake via Iceberg Tables, Databricks via Delta). The strategic position is upstream: own the event stream and the bridge to analytics, let the customer pick whichever warehouse they prefer. The actual competition is the CSP-native messaging services (Kinesis, Pub/Sub, Event Hubs) trying to keep customers from leaving the cloud provider for Confluent.</div>
+`},
+])}
 
 <div class="alert alert-warn"><strong>Confluent \u2260 Cloudflare topology.</strong> Cloudflare\'s edge model works because Cloudflare owns 330+ anycast PoPs that <em>are</em> the middle mile. Confluent is a tenant on AWS/Azure/GCP \u2014 there is no Confluent-owned backbone. The product surface is therefore <strong>configuring CSP primitives cleanly</strong> (PrivateLink, PNI, peering, TGW), not building a global mesh. <strong style="color:var(--dark)">This is exactly the surface Conduit orchestrates.</strong> The same multi-SaaS private connectivity pattern that Confluent customers wire up by hand today is what Conduit automates.</div>
+
 `;}
 
 function renderPatterns(){
