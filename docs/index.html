@@ -137,6 +137,7 @@ const NAV=[
   ]},
   {group:'Admin',items:[
     {id:'billing',label:'Billing + connections',fn:'renderBilling'},
+    {id:'pricing',label:'Pricing calculator',fn:'renderPricing'},
   ]},
   {group:'Roadmap',items:[
     {id:'roadmap',label:'Roadmap',fn:'renderRoadmap'},
@@ -148,11 +149,19 @@ const NAV=[
 let currentTab='arch';
 
 const BUILD={
-  version:'1.2.0',
+  version:'1.3.0',
   date:'2026-05-02',
-  commits:15,
-  label:'v1.2 \u00b7 confluent interview portfolio',
+  commits:16,
+  label:'v1.3 \u00b7 confluent interview portfolio',
   changelog:[
+    {v:'1.3.0',date:'2026-05-02',title:'Pricing calculator with sliders',notes:[
+      'Live cost calculator in the Admin tab \u2014 sliders for ingest, consumers, retention, Flink CFUs, connectors',
+      'Cluster-type and networking-choice toggles (Basic / Standard / Dedicated / Enterprise / Freight \u00b7 Public / Peering / PrivateLink / PNI)',
+      'Tableflow toggle that collapses the consumer-multiplier (N reads \u2192 1 materialization)',
+      'Three preset scenarios: small dev, mid-size CDC, enterprise + Flink',
+      'What-if comparison: shows alternative cluster type cost delta and PrivateLink-vs-PNI delta in real time',
+      'Approximate early-2026 rates with visible disclaimer to verify on confluent.io',
+    ]},
     {v:'1.2.0',date:'2026-05-02',title:'WarpStream control plane / data plane diagram',notes:[
       'Side-by-side diagram: Traditional Kafka (KRaft) vs WarpStream BYOC',
       'Shows the SDN-style separation of stateless agents from control plane',
@@ -2694,6 +2703,217 @@ ${active.sort((a,b)=>b.cost-a.cost).map(c=>`<tr>
 }
 
 render();
+
+// Pricing calculator state — sliders update this, render reads it
+const PRICING = {
+  rates: {
+    cluster: {
+      basic:      {base: 0,    in: 0.11, out: 0.05, label: 'Basic',      note: 'public only, no SLA'},
+      standard:   {base: 1.50, in: 0.11, out: 0.05, label: 'Standard',   note: 'public + multi-AZ'},
+      dedicated:  {base: 2.75, in: 0.04, out: 0.02, label: 'Dedicated',  note: 'peering + TGW + PrivateLink'},
+      enterprise: {base: 3.50, in: 0.05, out: 0.025,label: 'Enterprise', note: 'PrivateLink + PNI'},
+      freight:    {base: 1.10, in: 0.02, out: 0.01, label: 'Freight',    note: 'cheapest \u00b7 PNI \u00b7 batch-tolerant'}
+    },
+    storage:   {tiered: 0.10, infinite: 0.02, threshold: 1024},
+    flink:     {cfu: 0.10},
+    connect:   {standard: 0.05, premium: 0.10},
+    network:   {privatelink: 0.015, pni: 0.008, peering: 0.012, public: 0},
+    tableflow: {perGB: 0.04}
+  },
+  state: {
+    cluster: 'dedicated',
+    ingestGB: 200,
+    consumers: 5,
+    retention: 30,
+    cfus: 4,
+    connectorsStd: 3,
+    connectorsPrm: 1,
+    networking: 'privatelink',
+    tableflow: false
+  }
+};
+
+function pricingCompute() {
+  const r = PRICING.rates, s = PRICING.state;
+  const ct = r.cluster[s.cluster];
+  const HRS = 730;
+
+  const baseCost = ct.base * HRS;
+  const ingestCost = s.ingestGB * 30 * ct.in;
+  const readMultiplier = s.tableflow ? 1 : s.consumers;
+  const readCost = s.ingestGB * 30 * ct.out * readMultiplier;
+  const storageGB = s.ingestGB * s.retention;
+  const tiered = Math.min(storageGB, r.storage.threshold);
+  const infinite = Math.max(0, storageGB - r.storage.threshold);
+  const storageCost = tiered * r.storage.tiered + infinite * r.storage.infinite;
+  const flinkCost = s.cfus * r.flink.cfu * HRS;
+  const connectCost = (s.connectorsStd * r.connect.standard + s.connectorsPrm * r.connect.premium) * HRS
+                    + (s.connectorsStd + s.connectorsPrm) * s.ingestGB * 30 * 0.03;
+  const networkCost = s.ingestGB * 30 * r.network[s.networking];
+  const tableflowCost = s.tableflow ? s.ingestGB * 30 * r.tableflow.perGB : 0;
+
+  const total = baseCost + ingestCost + readCost + storageCost + flinkCost + connectCost + networkCost + tableflowCost;
+
+  return {
+    base: baseCost, ingest: ingestCost, read: readCost, storage: storageCost,
+    flink: flinkCost, connect: connectCost, network: networkCost, tableflow: tableflowCost,
+    total, storageGB, readMultiplier
+  };
+}
+
+function pricingSet(key, val) {
+  if (typeof val === 'string' && key !== 'cluster' && key !== 'networking') val = parseFloat(val);
+  if (key === 'tableflow') val = !PRICING.state.tableflow;
+  PRICING.state[key] = val;
+  document.getElementById('pricing-body').innerHTML = pricingBodyHTML();
+}
+
+function pricingPreset(name) {
+  const presets = {
+    small: {cluster:'standard', ingestGB:50, consumers:2, retention:7, cfus:0, connectorsStd:1, connectorsPrm:0, networking:'public', tableflow:false},
+    cdc:   {cluster:'dedicated', ingestGB:300, consumers:6, retention:30, cfus:4, connectorsStd:4, connectorsPrm:2, networking:'privatelink', tableflow:false},
+    ent:   {cluster:'enterprise', ingestGB:1500, consumers:15, retention:90, cfus:24, connectorsStd:8, connectorsPrm:4, networking:'pni', tableflow:true}
+  };
+  Object.assign(PRICING.state, presets[name]);
+  document.getElementById('pricing-body').innerHTML = pricingBodyHTML();
+}
+
+function pricingBodyHTML() {
+  const s = PRICING.state, r = PRICING.rates, c = pricingCompute();
+  const fmt = n => n >= 10000 ? '$' + Math.round(n).toLocaleString() : '$' + n.toFixed(0);
+  const fmt2 = n => '$' + n.toFixed(0).toLocaleString();
+  const lineRow = (label, cost, note) => `<tr><td>${label}</td><td style="text-align:right" class="mono">${fmt2(cost)}</td><td style="font-size:11px;color:var(--muted)">${note||''}</td></tr>`;
+
+  const altCluster = s.cluster === 'enterprise' ? 'freight' : (s.cluster === 'freight' ? 'enterprise' : null);
+  let altCompare = '';
+  if (altCluster) {
+    const saved = PRICING.state.cluster;
+    PRICING.state.cluster = altCluster;
+    const altC = pricingCompute();
+    PRICING.state.cluster = saved;
+    const delta = altC.total - c.total;
+    const pct = (delta / c.total * 100).toFixed(0);
+    altCompare = `<div style="font-size:11px;color:var(--muted);margin-top:6px">If you switched to <strong>${r.cluster[altCluster].label}</strong>: ${fmt2(altC.total)}/mo (${delta > 0 ? '+' : ''}${pct}%)</div>`;
+  }
+
+  const altNet = s.networking === 'privatelink' ? 'pni' : (s.networking === 'pni' ? 'privatelink' : null);
+  let netCompare = '';
+  if (altNet) {
+    const altCost = s.ingestGB * 30 * r.network[altNet];
+    const delta = altCost - c.network;
+    netCompare = `<div style="font-size:11px;color:var(--muted);margin-top:4px">${altNet.toUpperCase()} would be ${fmt2(altCost)}/mo (${delta > 0 ? '+' : ''}${fmt2(delta)})</div>`;
+  }
+
+  const slider = (label, key, min, max, step, val, suffix) => `
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="color:var(--dark);font-weight:500">${label}</span>
+        <span class="mono" style="color:var(--accent);font-weight:600">${val}${suffix||''}</span>
+      </div>
+      <input type="range" min="${min}" max="${max}" step="${step}" value="${val}"
+        oninput="pricingSet('${key}', this.value)"
+        style="width:100%;accent-color:var(--accent)">
+    </div>`;
+
+  const radioBtn = (key, val, label, current) => `
+    <button onclick="pricingSet('${key}', '${val}')"
+      style="padding:6px 10px;font-size:11px;border-radius:4px;cursor:pointer;
+             background:${current===val?'var(--accent)':'var(--surface)'};
+             color:${current===val?'#fff':'var(--dark)'};
+             border:1px solid ${current===val?'var(--accent)':'var(--border)'}">
+      ${label}</button>`;
+
+  return `
+<div class="alert alert-warn" style="margin-bottom:18px"><strong>Approximate pricing model.</strong> Based on early-2026 Confluent Cloud public rates. Verify current numbers on <a href="https://www.confluent.io/confluent-cloud/pricing/" target="_blank" style="color:var(--accent);font-weight:600">confluent.io/confluent-cloud/pricing</a>. Enterprise contracts are heavily negotiated. The point of this calculator is the <em>shape</em> of the model \u2014 how consumer count, networking choice, and retention drive cost \u2014 not the exact dollar amount.</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+
+  <div class="card">
+    <div class="sl" style="margin-top:0">Workload inputs</div>
+
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;color:var(--dark);font-weight:500;margin-bottom:6px">Cluster type</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${['basic','standard','dedicated','enterprise','freight'].map(t => radioBtn('cluster', t, r.cluster[t].label, s.cluster)).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">${r.cluster[s.cluster].note}</div>
+    </div>
+
+    ${slider('Ingest (GB/day)', 'ingestGB', 10, 5000, 10, s.ingestGB, ' GB')}
+    ${slider('Consumer groups (each is a full read)', 'consumers', 1, 50, 1, s.consumers, '')}
+    ${slider('Retention (days)', 'retention', 1, 365, 1, s.retention, ' d')}
+    ${slider('Flink CFUs (compute units)', 'cfus', 0, 64, 1, s.cfus, '')}
+    ${slider('Standard connectors', 'connectorsStd', 0, 20, 1, s.connectorsStd, '')}
+    ${slider('Premium connectors (Salesforce, Snowflake, etc.)', 'connectorsPrm', 0, 10, 1, s.connectorsPrm, '')}
+
+    <div style="margin-bottom:14px;margin-top:18px">
+      <div style="font-size:12px;color:var(--dark);font-weight:500;margin-bottom:6px">Networking</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${[['public','Public'],['peering','Peering'],['privatelink','PrivateLink'],['pni','PNI']].map(([v,l]) => radioBtn('networking', v, l, s.networking)).join('')}
+      </div>
+    </div>
+
+    <div style="margin-top:18px;padding:12px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px">
+        <input type="checkbox" ${s.tableflow?'checked':''} onclick="pricingSet('tableflow', null)" style="cursor:pointer">
+        <span><strong>Tableflow on</strong> \u2014 materializes once to Iceberg, analytical consumers read from S3 instead of Kafka (collapses N consumer reads to 1)</span>
+      </label>
+    </div>
+
+    <div style="margin-top:18px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;letter-spacing:0.5px">SCENARIO PRESETS</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="pricingPreset('small')" style="padding:6px 10px;font-size:11px;border-radius:4px;cursor:pointer;background:var(--surface);color:var(--dark);border:1px solid var(--border)">Small dev</button>
+        <button onclick="pricingPreset('cdc')" style="padding:6px 10px;font-size:11px;border-radius:4px;cursor:pointer;background:var(--surface);color:var(--dark);border:1px solid var(--border)">Mid-size CDC</button>
+        <button onclick="pricingPreset('ent')" style="padding:6px 10px;font-size:11px;border-radius:4px;cursor:pointer;background:var(--surface);color:var(--dark);border:1px solid var(--border)">Enterprise + Flink</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sl" style="margin-top:0">Monthly cost breakdown</div>
+
+    <table class="tbl" style="margin-bottom:14px">
+      ${lineRow('Cluster base ('+r.cluster[s.cluster].label+')', c.base, 'always-on hourly')}
+      ${lineRow('Ingest ('+(s.ingestGB*30).toLocaleString()+' GB/mo)', c.ingest, '$'+r.cluster[s.cluster].in+'/GB written')}
+      ${lineRow('Reads ('+(s.tableflow?'1':s.consumers)+'\u00d7 multiplier)', c.read, s.tableflow?'\u2713 collapsed by Tableflow':s.consumers+' consumer groups')}
+      ${lineRow('Storage ('+c.storageGB.toLocaleString()+' GB-days)', c.storage, c.storageGB > r.storage.threshold ? 'tiered + Infinite' : 'tiered')}
+      ${s.cfus > 0 ? lineRow('Flink ('+s.cfus+' CFU\u00b7hr)', c.flink, '$'+r.flink.cfu+'/CFU/hr') : ''}
+      ${(s.connectorsStd+s.connectorsPrm) > 0 ? lineRow('Connect ('+(s.connectorsStd+s.connectorsPrm)+' connectors)', c.connect, 'task-hr + throughput') : ''}
+      ${lineRow('Networking ('+s.networking.toUpperCase()+')', c.network, c.network === 0 ? 'public, no charge' : '$'+r.network[s.networking]+'/GB egress')}
+      ${s.tableflow ? lineRow('Tableflow', c.tableflow, '$'+r.tableflow.perGB+'/GB materialized') : ''}
+      <tr style="font-weight:700;background:var(--surface2)">
+        <td>Total estimated monthly cost</td>
+        <td style="text-align:right" class="mono" style="font-size:14px">${fmt(c.total)}</td>
+        <td style="font-size:11px;color:var(--muted)">\u2248 ${fmt(c.total*12)}/yr</td>
+      </tr>
+    </table>
+
+    <div style="padding:12px;background:var(--surface2);border-radius:6px;border-left:3px solid var(--accent);margin-bottom:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--accent);letter-spacing:0.5px;margin-bottom:6px">WHAT-IF</div>
+      ${altCompare}
+      ${netCompare}
+    </div>
+
+    <div class="sl" style="margin-top:0">What this teaches</div>
+    <ul style="font-size:12px;color:var(--muted);line-height:1.7;padding-left:20px;margin:0">
+      <li><strong>Consumer multiplier</strong> \u2014 every consumer group reads the same data again. ${s.consumers} consumers means ${s.consumers}\u00d7 the read line. This is why Tableflow is a pricing-model arbitrage, not just a feature.</li>
+      <li><strong>PNI vs PrivateLink</strong> \u2014 PNI is roughly half the cost of PrivateLink at scale. Customers ask for PrivateLink because they recognize it; PNI is often the right answer once throughput is real.</li>
+      <li><strong>Freight vs Enterprise</strong> \u2014 Freight is Confluent\'s pricing-driven response to WarpStream. Significantly cheaper for batch-tolerant workloads at the cost of a few hundred ms of added latency.</li>
+      <li><strong>Retention compounds</strong> \u2014 storage is per-GB-day. Doubling retention from 30 to 60 days doubles the storage line.</li>
+      <li><strong>The networking PM connection</strong> \u2014 PrivateLink, PNI, peering, public are not just architecture decisions. They\'re visible commercial line items on the customer\'s invoice. Architecture is downstream of cost; cost is downstream of architecture. This team owns both directions.</li>
+    </ul>
+  </div>
+
+</div>`;
+}
+
+function renderPricing() {
+  return `
+<div class="sl">Confluent Cloud pricing calculator</div>
+<div id="pricing-body">${pricingBodyHTML()}</div>
+`;
+}
 
 function renderLifecycle(){
   const active=CONNECTIONS.filter(c=>c.status==='active');
