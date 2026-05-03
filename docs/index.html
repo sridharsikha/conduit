@@ -148,11 +148,17 @@ const NAV=[
 let currentTab='arch';
 
 const BUILD={
-  version:'1.1.0',
+  version:'1.2.0',
   date:'2026-05-02',
-  commits:14,
-  label:'v1.1 \u00b7 confluent interview portfolio',
+  commits:15,
+  label:'v1.2 \u00b7 confluent interview portfolio',
   changelog:[
+    {v:'1.2.0',date:'2026-05-02',title:'WarpStream control plane / data plane diagram',notes:[
+      'Side-by-side diagram: Traditional Kafka (KRaft) vs WarpStream BYOC',
+      'Shows the SDN-style separation of stateless agents from control plane',
+      '11-row comparison table on dimensions: brokers, data location, metadata, replication, cost, trust',
+      'Frames WarpStream as the architecture that unlocks customer-edge and regulated-industry deployments',
+    ]},
     {v:'1.1.0',date:'2026-05-02',title:'Kafka Connect deep-dive in Confluent topology',notes:[
       'Architecture diagram showing Connect cluster, brokers, customer VPC, and customer-private destinations',
       'Three deployment models comparison (self-managed, Confluent Platform, Confluent Cloud managed)',
@@ -872,6 +878,134 @@ ${accGroup('topology-access', [
 </table>
 
 <div class="alert alert-info"><strong>The strategic angle.</strong> Kafka Connect has been part of open-source Apache Kafka since 0.9 (2015) \u2014 it is not Confluent-proprietary. What is Confluent-proprietary is the <em>managed-service experience</em>: ~80 connectors as fully-managed SaaS, integrated with Schema Registry, billed per connector-hour and data volume, with private connectivity to customer destinations. This is the same playbook Snowflake runs on Postgres-style SQL, Databricks runs on Spark, MongoDB runs on the open-source database. <strong style="color:var(--dark)">The open-source primitive is free; the operational experience is the product.</strong> Connect+managed is one of Confluent Cloud\'s biggest revenue levers because customers do not want to operate yet another distributed system.</div>
+
+<div class="sl">WarpStream \u2014 control plane / data plane separation for Kafka</div>
+<div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:0">In September 2024 Confluent acquired <strong style="color:var(--dark)">WarpStream</strong>, a Kafka-compatible system that took the control-plane / data-plane separation to its logical conclusion. The architectural move is the same one SDN made for networking in 2008 \u2014 separate the <em>intelligence</em> (stateful, smart, centralized) from the <em>forwarding</em> (stateless, fast, distributed). Once they\'re separated, each can scale, evolve, and be owned independently.</p></div>
+
+<div class="sl">Traditional Kafka vs WarpStream \u2014 same shape, different decoupling</div>
+<div class="card" style="padding:8px;overflow-x:auto">
+<svg width="100%" viewBox="0 0 920 460" style="display:block">
+<defs><marker id="arws" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+<text x="230" y="24" text-anchor="middle" style="font-family:var(--font);font-size:14px;font-weight:700;fill:#3C3489">Traditional Kafka (KRaft mode)</text>
+<text x="230" y="40" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#5B21B6;font-style:italic">control + data plane co-located in stateful brokers</text>
+
+<text x="690" y="24" text-anchor="middle" style="font-family:var(--font);font-size:14px;font-weight:700;fill:#0F766E">WarpStream BYOC</text>
+<text x="690" y="40" text-anchor="middle" style="font-family:var(--font);font-size:10px;fill:#0F766E;font-style:italic">control plane separate from data plane, data lives in customer S3</text>
+
+<line x1="460" y1="50" x2="460" y2="450" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
+
+<rect x="20" y="60" width="420" height="48" rx="6" fill="#DDD6FE" stroke="#5B21B6" stroke-width="1"/>
+<text x="230" y="80" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:700;fill:#3C3489">Producers / Consumers</text>
+<text x="230" y="96" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5B21B6">Kafka API \u00b7 wire protocol over TCP / TLS</text>
+
+<rect x="480" y="60" width="420" height="48" rx="6" fill="#CCFBF1" stroke="#0F766E" stroke-width="1"/>
+<text x="690" y="80" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:700;fill:#0F766E">Producers / Consumers</text>
+<text x="690" y="96" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#0F766E;font-style:italic">unchanged \u2014 same Kafka API \u2014 zero client changes</text>
+
+<text x="230" y="135" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#5B21B6">Stateful brokers (control + data co-located)</text>
+<rect x="20" y="142" width="135" height="120" rx="8" fill="#F5F3FF" stroke="#5B21B6" stroke-width="0.5"/>
+<text x="87" y="160" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#3C3489">broker-1</text>
+<rect x="32" y="170" width="111" height="22" rx="3" fill="#fff" stroke="#7C3AED" stroke-width="0.3"/>
+<text x="87" y="184" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5B21B6">KRaft (controller)</text>
+<rect x="32" y="196" width="111" height="22" rx="3" fill="#fff" stroke="#7C3AED" stroke-width="0.3"/>
+<text x="87" y="210" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5B21B6">partition leader</text>
+<rect x="32" y="222" width="111" height="32" rx="3" fill="#FEF3C7" stroke="#D97706" stroke-width="0.5"/>
+<text x="87" y="237" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#92400E">local disk</text>
+<text x="87" y="248" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#92400E">EBS / SSD</text>
+
+<rect x="162" y="142" width="135" height="120" rx="8" fill="#F5F3FF" stroke="#5B21B6" stroke-width="0.5"/>
+<text x="229" y="160" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#3C3489">broker-2</text>
+<rect x="174" y="170" width="111" height="22" rx="3" fill="#fff" stroke="#7C3AED" stroke-width="0.3"/>
+<text x="229" y="184" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5B21B6">KRaft (voter)</text>
+<rect x="174" y="196" width="111" height="22" rx="3" fill="#fff" stroke="#7C3AED" stroke-width="0.3"/>
+<text x="229" y="210" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5B21B6">partition leader</text>
+<rect x="174" y="222" width="111" height="32" rx="3" fill="#FEF3C7" stroke="#D97706" stroke-width="0.5"/>
+<text x="229" y="237" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#92400E">local disk</text>
+<text x="229" y="248" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#92400E">EBS / SSD</text>
+
+<rect x="304" y="142" width="135" height="120" rx="8" fill="#F5F3FF" stroke="#5B21B6" stroke-width="0.5"/>
+<text x="371" y="160" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#3C3489">broker-3</text>
+<rect x="316" y="170" width="111" height="22" rx="3" fill="#fff" stroke="#7C3AED" stroke-width="0.3"/>
+<text x="371" y="184" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5B21B6">KRaft (voter)</text>
+<rect x="316" y="196" width="111" height="22" rx="3" fill="#fff" stroke="#7C3AED" stroke-width="0.3"/>
+<text x="371" y="210" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5B21B6">partition follower</text>
+<rect x="316" y="222" width="111" height="32" rx="3" fill="#FEF3C7" stroke="#D97706" stroke-width="0.5"/>
+<text x="371" y="237" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#92400E">local disk</text>
+<text x="371" y="248" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#92400E">EBS / SSD</text>
+
+<text x="230" y="285" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5F5E5A;font-style:italic">replication 3x \u00b7 cross-AZ traffic costs $$ \u00b7 broker recovery is hard</text>
+
+<rect x="20" y="305" width="420" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="0.5"/>
+<text x="230" y="324" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#92400E">Operational reality</text>
+<text x="230" y="340" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#92400E">stateful brokers \u00b7 partition rebalancing \u00b7 broker recovery</text>
+<text x="230" y="354" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#92400E">3x storage cost \u00b7 cross-AZ replication fees \u00b7 broker autoscaling is hard</text>
+
+<rect x="20" y="378" width="420" height="68" rx="6" fill="#fff" stroke="#5B21B6" stroke-width="0.5"/>
+<text x="30" y="396" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#3C3489">Trust model</text>
+<text x="30" y="412" style="font-family:var(--font);font-size:9px;fill:#5B21B6">Confluent operates the brokers, sees all bytes</text>
+<text x="30" y="425" style="font-family:var(--font);font-size:9px;fill:#5B21B6">data lives in Confluent\'s storage</text>
+<text x="30" y="438" style="font-family:var(--font);font-size:9px;fill:#5B21B6">CCN abstraction provides per-customer network isolation</text>
+
+<text x="690" y="135" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">Stateless agents (data plane forwarders)</text>
+
+<rect x="480" y="142" width="200" height="80" rx="8" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/>
+<text x="580" y="161" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">Customer VPC \u00b7 stateless agents</text>
+<rect x="492" y="170" width="58" height="42" rx="3" fill="#fff" stroke="#0F766E" stroke-width="0.3"/>
+<text x="521" y="186" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#0F766E">agent</text>
+<text x="521" y="200" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#0F766E">stateless</text>
+<rect x="554" y="170" width="58" height="42" rx="3" fill="#fff" stroke="#0F766E" stroke-width="0.3"/>
+<text x="583" y="186" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#0F766E">agent</text>
+<text x="583" y="200" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#0F766E">stateless</text>
+<rect x="616" y="170" width="58" height="42" rx="3" fill="#fff" stroke="#0F766E" stroke-width="0.3"/>
+<text x="645" y="186" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#0F766E">agent</text>
+<text x="645" y="200" text-anchor="middle" style="font-family:var(--font);font-size:8px;fill:#0F766E">stateless</text>
+
+<rect x="700" y="142" width="200" height="80" rx="8" fill="#F0FDFA" stroke="#0F766E" stroke-width="0.5"/>
+<text x="800" y="161" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#0F766E">Customer object storage</text>
+<rect x="712" y="170" width="176" height="22" rx="3" fill="#fff" stroke="#0F766E" stroke-width="0.3"/>
+<text x="800" y="184" text-anchor="middle" class="mono" style="font-family:var(--mono);font-size:9px;fill:#0F766E">s3://customer-bucket/...</text>
+<text x="800" y="206" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#0F766E">bytes never leave customer</text>
+
+<line x1="680" y1="190" x2="700" y2="190" stroke="#0F766E" stroke-width="1.5" marker-end="url(#arws)"/>
+
+<rect x="480" y="232" width="420" height="50" rx="6" fill="#DDD6FE" stroke="#5B21B6" stroke-width="1"/>
+<text x="690" y="252" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:700;fill:#3C3489">Confluent control plane (metadata only)</text>
+<text x="690" y="268" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#5B21B6">topic config \u00b7 consumer offsets \u00b7 agent registry \u00b7 partition assignment</text>
+
+<line x1="580" y1="232" x2="580" y2="222" stroke="#5B21B6" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arws)"/>
+<line x1="800" y1="232" x2="800" y2="222" stroke="#5B21B6" stroke-width="1" stroke-dasharray="3 2"/>
+
+<rect x="480" y="305" width="420" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="0.5"/>
+<text x="690" y="324" text-anchor="middle" style="font-family:var(--font);font-size:11px;font-weight:600;fill:#92400E">Operational reality</text>
+<text x="690" y="340" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#92400E">agents are stateless \u00b7 crash one, start another \u00b7 scale like web servers</text>
+<text x="690" y="354" text-anchor="middle" style="font-family:var(--font);font-size:9px;fill:#92400E">storage = S3 cost only \u00b7 zero cross-AZ replication fees \u00b7 zone-aware reads</text>
+
+<rect x="480" y="378" width="420" height="68" rx="6" fill="#fff" stroke="#0F766E" stroke-width="0.5"/>
+<text x="490" y="396" style="font-family:var(--font);font-size:10px;font-weight:600;fill:#0F766E">Trust model</text>
+<text x="490" y="412" style="font-family:var(--font);font-size:9px;fill:#0F766E">Confluent never sees raw messages \u2014 only metadata</text>
+<text x="490" y="425" style="font-family:var(--font);font-size:9px;fill:#0F766E">data lives in customer\'s S3, customer\'s account, customer\'s control</text>
+<text x="490" y="438" style="font-family:var(--font);font-size:9px;fill:#0F766E">zero-access architecture for regulated industries</text>
+</svg>
+</div>
+
+<div class="sl">What\'s the same, what\'s different</div>
+<table class="tbl">
+<tr><th>Dimension</th><th>Traditional Kafka (KRaft)</th><th>WarpStream BYOC</th></tr>
+<tr><td><strong>Wire protocol</strong></td><td>Kafka API</td><td>Kafka API \u2014 unchanged, no client work</td></tr>
+<tr><td><strong>Brokers</strong></td><td>Stateful, hold partition data on disk</td><td>Stateless agents, no local data</td></tr>
+<tr><td><strong>Data location</strong></td><td>Confluent-managed disks (or self-managed)</td><td>Customer\'s S3 / GCS / Azure Blob</td></tr>
+<tr><td><strong>Cluster metadata</strong></td><td>KRaft (in special internal Kafka topic)</td><td>WarpStream control plane (separate service)</td></tr>
+<tr><td><strong>Replication</strong></td><td>3x replication across brokers</td><td>S3 durability handles it (no replication factor)</td></tr>
+<tr><td><strong>Recovery from broker death</strong></td><td>Partition reassignment, leadership transfer</td><td>Crash one agent, start another \u2014 no state to recover</td></tr>
+<tr><td><strong>Cross-AZ traffic costs</strong></td><td>Real expense (replication + consumer fetches)</td><td>Zero \u2014 zone-aware reads from S3</td></tr>
+<tr><td><strong>Storage cost</strong></td><td>3x replicated EBS / SSD pricing</td><td>1x S3 pricing (way cheaper)</td></tr>
+<tr><td><strong>Trust model</strong></td><td>Confluent sees all bytes</td><td>Confluent sees only metadata; bytes stay in customer storage</td></tr>
+<tr><td><strong>Latency</strong></td><td>Single-digit ms to broker disk</td><td>Hundreds of ms to S3 (the trade-off)</td></tr>
+<tr><td><strong>Best for</strong></td><td>Low-latency workloads, traditional Kafka semantics</td><td>Cost-sensitive, compliance-sensitive, batch-tolerant workloads</td></tr>
+</table>
+
+<div class="alert alert-info"><strong>The architectural pattern is the SDN move applied to streaming.</strong> Just as OpenFlow separated network intelligence (controller) from packet forwarding (switch ASICs), WarpStream separates Kafka intelligence (control plane) from message forwarding (stateless agents). Same principle. Same benefits: each layer scales independently, evolves independently, and can be owned by different parties. <strong style="color:var(--dark)">For Confluent the strategic move is the trust split</strong> \u2014 customer-private data plane, vendor-managed control plane. This is the architecture that unlocks regulated industries (banking, healthcare, defense), customer-edge deployments, and eventually \u2014 plausibly \u2014 colo / Outpost hosting. The control plane stays in Confluent\'s public regions; the data plane runs wherever the customer wants their data to live.</div>
 
 <div class="sl">A Flink example \u2014 fraud detection in 30 lines</div>
 <div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">To make this concrete: here is a real Flink SQL job that detects credit-card fraud in real time. It reads from a Kafka topic of card transactions, maintains state per card, joins against a customer-profile table, applies a windowed rule, and writes alerts back to Kafka. This is a load-bearing example of what "stream processing" actually means.</p>
